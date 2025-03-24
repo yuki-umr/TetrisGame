@@ -1,0 +1,5 @@
+.idea/
+.run/
+
+GameClient/bin/
+GameClient/obj/
