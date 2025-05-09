@@ -7,6 +7,12 @@ using GameClient.EntryPoint;
 
 namespace GameClient;
 
+// Command line arguments:
+// mainClass: specifies the entry point class, which will get instantiated right after launch
+// subClass: specifies the class which the mainClass should instantiate after launch
+// pid: specifies the unique PID of the specific process. This is mostly useful when running multiple simulations in parallel
+// args: setting multiple keywords is supported, use ' ' to split keywords
+//       the format for setting a specific value to a target is "target=value"
 public static class Program {
     private static readonly Dictionary<string, Type> EntryClass = new() {
         { "GameWindow", typeof(GameWindow) },
@@ -20,7 +26,8 @@ public static class Program {
         { "NodeViewer", typeof(NodeViewer) },
         { "QuickTest", typeof(QuickTest) },
         { "LogGraphViewer", typeof(LogGraphViewer) },
-        { "GeneticsOptimizer", typeof(GeneticsOptimizer) }
+        { "GeneticsOptimizer", typeof(GeneticsOptimizer) },
+        { "ReplayViewer", typeof(ReplayViewer) },
     };
 
     private static int ThreadId => Environment.CurrentManagedThreadId; 
