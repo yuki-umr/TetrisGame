@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace GameClient.Tetris; 
 
-public struct Vector2Int {
+public struct Vector2Int : IEquatable<Vector2Int> {
     public int x, y;
 
     public Vector2Int(int x, int y) {
@@ -16,7 +17,7 @@ public struct Vector2Int {
 
     public readonly Vector2Int Inverse() => new(y, x);
 
-    private bool Equals(Vector2Int other) {
+    public bool Equals(Vector2Int other) {
         return x == other.x && y == other.y;
     }
 
@@ -44,6 +45,37 @@ public struct Vector2Int {
 
     public override string ToString() {
         return $"({x}, {y})";
+    }
+}
+
+public struct Bounds : IEquatable<Bounds> {
+    public int x, y, width, height;
+
+    public Bounds(int x, int y, int width, int height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    public bool Equals(Bounds other) {
+        return x == other.x && y == other.y && width == other.width && height == other.height;
+    }
+
+    public override bool Equals(object obj) {
+        return obj is Bounds other && Equals(other);
+    }
+
+    public override int GetHashCode() {
+        return HashCode.Combine(x, y, width, height);
+    }
+
+    public static bool operator ==(Bounds left, Bounds right) {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Bounds left, Bounds right) {
+        return !left.Equals(right);
     }
 }
 
@@ -237,7 +269,7 @@ public class BlockMatrix {
     }
 }
 
-public readonly struct MinoState {
+public readonly struct MinoState : IEquatable<MinoState> {
     public readonly int x, y, rotation;
 
     public MinoState(int x, int y, int rotation) {
@@ -246,7 +278,7 @@ public readonly struct MinoState {
         this.rotation = rotation;
     }
 
-    private bool Equals(MinoState other) {
+    public bool Equals(MinoState other) {
         return x == other.x && y == other.y && rotation == other.rotation;
     }
 

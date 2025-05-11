@@ -35,9 +35,13 @@ public class GameField : IStateSerializable {
         }
     }
 
-    protected virtual void SetBlock(int x, int y, int block) {
+    public virtual void SetBlock(int x, int y, int block) {
         field[x, y] = true;
         index.OnSetBlock(x, y);
+    }
+
+    public virtual void UnsetBlock(int x, int y) {
+        field[x, y] = false;
     }
     
     public bool WillCollideMino(Mino mino, int x, int y) {

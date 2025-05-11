@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 namespace GameClient.Tetris.Replay;
 
 public class GameStateNode {
-    public GameFieldState field;
-    public List<MinoRecord> minoRecords;
-    public MovementResult movementResult;
+    [JsonProperty] public GameFieldState gameField;
+    [JsonProperty] public List<MinoRecord> minoRecords;
+    [JsonProperty] public MovementResult movementResult;
     
     [JsonProperty] private int currentMino, holdMino;
     [JsonProperty] public int[] nextMinos;
@@ -17,7 +17,7 @@ public class GameStateNode {
     
     public bool TryGetNextMino(int index, out int mino) {
         mino = 0;
-        if (index < 0 || nextMinos.Length < index) return false;
+        if (index < 0 || nextMinos.Length <= index) return false;
         return ReplayConstants.TryConvertMinoType(nextMinos[index], out mino);
     }
 }

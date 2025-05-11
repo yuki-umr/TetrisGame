@@ -28,7 +28,7 @@ public class ColoredGameField : GameField {
         }
     }
 
-    protected override void SetBlock(int x, int y, int block) {
+    public override void SetBlock(int x, int y, int block) {
         base.SetBlock(x, y, block);
         fieldColor[x, y, 0] = block;
     }
