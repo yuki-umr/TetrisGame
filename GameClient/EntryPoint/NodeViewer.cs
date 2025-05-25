@@ -51,8 +51,12 @@ public class NodeViewer : WindowManager {
     protected override void OnInitialize() {
         GameState gameState = CreateTestGameState();
         evaluator = Evaluator.GetDefault(new BotSettings());
-        Searcher searcher = new Searcher(5, BeamWidth);
-        searcher.BeamSearch(gameState, null, evaluator, out nodesTree);
+        ISearcher searcher = new BeamSearcher(5, BeamWidth);
+        
+        searcher.Search(gameState, null, evaluator, out SearchProcess process);
+        BeamSearchProcess beamProcess = (BeamSearchProcess)process;
+        
+        nodesTree = beamProcess.NodesTree;
         fieldsTree = nodesTree.Select(list => list.Select(node => node.Parent.GameState.Field.ConvertToColored()).ToList()).ToArray();
         Console.WriteLine(fieldsTree[1].Count);
         inputSystem = new KeyboardInput();
@@ -73,7 +77,7 @@ public class NodeViewer : WindowManager {
     protected override void OnDraw(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch) {
         for (var y = 0; y < nodesTree.Length; y++) {
             for (var x = 0; x < nodesTree[y].Count; x++) {
-                BeamNode node = nodesTree[y][x];
+                StateNode node = nodesTree[y][x];
                 ColoredGameField field = fieldsTree[y][x];
                 int dx = ItemWidth * x + drawOffset.x;
                 int dy = ItemHeight * y + drawOffset.y;

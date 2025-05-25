@@ -1,28 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace GameClient.Tetris; 
+namespace GameClient.Tetris;
 
-public class Searcher {
+public class BeamSearcher : ISearcher {
     public readonly int nextSeek, beamWidth;
     private readonly SearchStat stats;
-    
-    public string LastSearchStats => $"{stats.lastNode} nodes {stats.lastTime:F0}ms";
-    public string TotalSearchStats => $"{stats.nodes} nodes in {stats.time:F2}ms";
-    public string SearchSpeed => $"{stats.nodes * 1000 / stats.time:F2} nodes/s";
 
-    public Searcher(int nextSeek, int beamWidth) {
+    public string SearcherInfo { get; }
+
+    public BeamSearcher(int nextSeek, int beamWidth) {
         this.nextSeek = nextSeek;
         this.beamWidth = beamWidth;
+        
+        SearcherInfo = $"Beam Search (depth={nextSeek}, width={beamWidth})";
         stats = new SearchStat();
     }
     
-    public BeamNode BeamSearch(GameState gameState, BeamNode lastSelectedNode, Evaluator evaluator, out List<BeamNode>[] nodesTree) {
+    public StateNode Search(GameState gameState, StateNode lastSelectedNode, Evaluator evaluator, out SearchProcess searchProcess) {
         int nodeCount = 0;
         Stopwatch sw = Stopwatch.StartNew();
         
         // if the estimated current state and the actual state is not the same, do a normal search from scratch
-        BeamNode rootNode;
+        StateNode rootNode;
         if (lastSelectedNode == null || lastSelectedNode.GameState != gameState) {
             rootNode = BeamNode.CreateRootNode(gameState, evaluator);
         } else {
@@ -30,30 +30,37 @@ public class Searcher {
             rootNode = lastSelectedNode;
         }
         
-        List<BeamNode> bestNodes = new List<BeamNode> { rootNode };
-        nodesTree = new List<BeamNode>[nextSeek + 1];
+        List<StateNode> bestNodes = new List<StateNode> { rootNode };
+        BeamSearchProcess process = new(nextSeek);
+        searchProcess = process;
         for (int i = 0; i <= nextSeek; i++) {
-            PriorityQueue<BeamNode, int> childNodes = BeamNode.ExpandNodes(bestNodes, evaluator);
+            PriorityQueue<StateNode, int> childNodes = BeamNode.ExpandNodes(bestNodes, evaluator);
             nodeCount += childNodes.Count;
             
             // select top [BeamWidth] nodes from all generated nodes
             bestNodes.Clear();
-            nodesTree[i] = new List<BeamNode>();
             while (childNodes.Count > 0 && bestNodes.Count < beamWidth) {
-                BeamNode childNode = childNodes.Dequeue();
+                BeamNode childNode = (BeamNode)childNodes.Dequeue();
                 if (!childNode.HasRoute()) continue;
                 childNode.NodeRank = bestNodes.Count;
                 bestNodes.Add(childNode);
-                nodesTree[i].Add(childNode);
+                process.AddNode(i, childNode);
             }
 
             if (bestNodes.Count == 0) return null;
         }
 
-        BeamNode bestNode = bestNodes[0];
+        StateNode bestNode = bestNodes[0];
 
         stats.AddResult(nodeCount, sw.Elapsed.TotalMilliseconds);
         return bestNode;
+    }
+
+    public SearchStats GetLastSearchStats() {
+        string lastSearchStats = $"{stats.lastNode} nodes {stats.lastTime:F0}ms";
+        string totalSearchStats = $"{stats.nodes} nodes in {stats.time:F2}ms";
+        string searchSpeed = $"{stats.nodes * 1000 / stats.time:F2} nodes/s";
+        return new SearchStats(lastSearchStats, totalSearchStats, searchSpeed);
     }
 
     private class SearchStat {

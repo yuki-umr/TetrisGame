@@ -11,19 +11,19 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     private readonly GameController game;
     private readonly MinoRouteInput inputSystem;
-    private readonly List<(Searcher, Evaluator)> searchers;
+    private readonly List<(BeamSearcher, Evaluator)> searchers;
     private readonly int minimumSearchDepth;
 
-    private BeamNode nextNode;
+    private StateNode nextNode;
 
     public MultipleSearchBotPlayer(GameController game, MinoRouteInput inputSystem, IEnumerable<BotSettings> settings) {
         this.game = game;
         this.inputSystem = inputSystem;
 
-        searchers = new List<(Searcher, Evaluator)>();
+        searchers = new List<(BeamSearcher, Evaluator)>();
         foreach (BotSettings setting in settings) {
             Evaluator evaluator = Evaluator.GetDefault(setting);
-            Searcher searcher = new Searcher(setting.BeamDepth, setting.BeamWidth);
+            BeamSearcher searcher = new BeamSearcher(setting.BeamDepth, setting.BeamWidth);
             searchers.Add((searcher, evaluator));
         }
 
@@ -41,14 +41,14 @@ public class MultipleSearchBotPlayer : BotPlayer {
     }
 
     private void UpdateMino() {
-        BeamNode bestNode = null;
+        StateNode bestNode = null;
         HashSet<GameState> bestStates = new HashSet<GameState>();
         List<Pattern>[] foundPatterns = new List<Pattern>[minimumSearchDepth];
         bool saveThisState = false;
         foreach (var (searcher, evaluator) in searchers) {
-            BeamNode node = searcher.BeamSearch(game.State, null, evaluator, out _);
+            StateNode node = searcher.Search(game.State, null, evaluator, out _);
             if (node == null) continue;
-            List<BeamNode> nodes = node.GetNodesFromRoot();
+            List<StateNode> nodes = node.GetNodesFromRoot();
             for (var i = 0; i < minimumSearchDepth; i++) {
                 List<Pattern> newPatterns = nodes[i].Evaluation.patternsFound
                     .Select(p => p.pattern)
@@ -94,5 +94,5 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     public override void Draw(SpriteBatch spriteBatch) { }
 
-    public override string SearchSpeed => searchers[0].Item1.SearchSpeed;
+    public override string SearchSpeed => searchers[0].Item1.GetLastSearchStats().searchSpeed;
 }

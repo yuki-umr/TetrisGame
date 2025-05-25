@@ -35,7 +35,7 @@ public class MultipleSearchViewer : WindowManager {
     private readonly List<SearchPair> searchPairs = new();
     private readonly List<GameState> originalStates = new();
     private readonly List<ColoredGameField> originalFields = new();
-    private readonly List<List<(ColoredGameField, BeamNode)>> nodeFields = new();
+    private readonly List<List<(ColoredGameField, StateNode)>> nodeFields = new();
 
     private int CurrentIndex {
         get => favoriteOnlyMode ? favoriteIndex : nodeIndex;
@@ -103,9 +103,9 @@ public class MultipleSearchViewer : WindowManager {
         
         for (var i = 0; i < searchPairs.Count; i++) {
             var searcher = searchPairs[i];
-            BeamNode bestNode = searcher.BeamSearch(selectedState);
-            List<BeamNode> nodes = bestNode.GetNodesFromRoot();
-            nodeFields.Add(new List<(ColoredGameField, BeamNode)>());
+            StateNode bestNode = searcher.BeamSearch(selectedState);
+            List<StateNode> nodes = bestNode.GetNodesFromRoot();
+            nodeFields.Add(new List<(ColoredGameField, StateNode)>());
             
             // nodes.Count -> maximum depth
             // maxDepth -> clamped depth
@@ -142,7 +142,7 @@ public class MultipleSearchViewer : WindowManager {
             int dy = ItemOffset.y + ItemSize.y * y;
             int totalAttackLines = 0, totalClearLines = 0, totalBadClears = 0, totalGoodAttacks = 0;
             for (var x = 0; x < nodeFields[y].Count; x++) {
-                (ColoredGameField field, BeamNode node) = nodeFields[y][x];
+                (ColoredGameField field, StateNode node) = nodeFields[y][x];
                 bool isBadClear = node.Evaluation.result.lineClear is not (0 or 4) && !node.Evaluation.result.tSpin;
                 totalAttackLines += node.Evaluation.result.attackLine; 
                 totalClearLines += node.Evaluation.result.lineClear;
@@ -171,9 +171,8 @@ public class MultipleSearchViewer : WindowManager {
                 Primitives.DrawText(spriteBatch, $"#{node.NodeRank}", dx, dy, 14, 0xffffffffu);
             }
 
-            BeamNode lastNode = nodeFields[y][maxDepth - 1].Item2;
-            string searcherInfo = $"Width: {searchPairs[y].searcher.beamWidth}\n" +
-                                  $"Depth: {searchPairs[y].searcher.nextSeek}\n\n" +
+            StateNode lastNode = nodeFields[y][maxDepth - 1].Item2;
+            string searcherInfo = $"{searchPairs[y].searcher.SearcherInfo}\n\n" +
                                   // $"{string.Join('\n', Enum.GetValues<BotSettings.Flag>().Where(flag => searchPairs[y].settings.HasFlag(flag)))}\n\n" +
                                   $"{totalAttackLines} attacks ({totalGoodAttacks})\n" +
                                   $"{totalClearLines} lines\n" +
@@ -224,18 +223,18 @@ public class MultipleSearchViewer : WindowManager {
     }
 
     private class SearchPair {
-        public readonly Searcher searcher;
+        public readonly BeamSearcher searcher;
         private readonly Evaluator evaluator;
         public readonly BotSettings settings;
 
         public SearchPair(string botFlags) {
             settings = new BotSettings(botFlags);
-            searcher = new Searcher(settings.BeamDepth, settings.BeamWidth);
+            searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
             evaluator = Evaluator.GetDefault(settings);
         }
 
-        public BeamNode BeamSearch(GameState state) {
-            return searcher.BeamSearch(state, null, evaluator, out _);
+        public StateNode BeamSearch(GameState state) {
+            return searcher.Search(state, null, evaluator, out _);
         }
     }
 }

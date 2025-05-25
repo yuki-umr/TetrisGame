@@ -11,9 +11,9 @@ public class StandardBotPlayer : BotPlayer {
     private readonly GameController game;
     private readonly MinoRouteInput inputSystem;
     private readonly Evaluator evaluator;
-    private readonly Searcher searcher;
+    private readonly ISearcher searcher;
 
-    private BeamNode destinationNode, nextNode;
+    private StateNode destinationNode, nextNode;
 
     public StandardBotPlayer(GameController game, MinoRouteInput inputSystem, BotSettings settings = null) {
         this.game = game;
@@ -23,7 +23,7 @@ public class StandardBotPlayer : BotPlayer {
         evaluator = Evaluator.GetDefault(settings);
 
         destinationNode = null;
-        searcher = new Searcher(settings.BeamDepth, settings.BeamWidth);
+        searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
         
         game.ChangeInputMode();
         UpdateMino();
@@ -38,7 +38,7 @@ public class StandardBotPlayer : BotPlayer {
     }
 
     private void UpdateMino() {
-        destinationNode = searcher.BeamSearch(game.State, nextNode, evaluator, out _);
+        destinationNode = searcher.Search(game.State, nextNode, evaluator, out _);
         if (destinationNode != null) {
             nextNode = destinationNode.GetSubRootNode();
             inputSystem.Route = nextNode.GetRoute();
@@ -51,15 +51,16 @@ public class StandardBotPlayer : BotPlayer {
     }
 
     public override void Draw(SpriteBatch spriteBatch) {
-        string nodesInfo = $"BeamSearch depth{searcher.nextSeek} width{searcher.beamWidth}";
-        nodesInfo += $"\n{searcher.LastSearchStats}\n{searcher.TotalSearchStats}";
-        nodesInfo += $"\n\navg:{searcher.SearchSpeed}";
+        string nodesInfo = searcher.SearcherInfo;
+        SearchStats lastStats = searcher.GetLastSearchStats();
+        nodesInfo += $"\n{lastStats.lastSearchStats}\n{lastStats.totalSearchStats}";
+        nodesInfo += $"\n\navg:{lastStats.searchSpeed}";
         Primitives.DrawText(spriteBatch, nodesInfo, 720, 64, 24, 0xffffffff);
         Primitives.DrawText(spriteBatch, game.Statistics.ToString(), 720, 240, 16, 0xffffffff);
         Primitives.DrawText(spriteBatch, evaluator.ControlFlags, 720, 600, 10, 0xffffffff);
         
         if (destinationNode != null && DrawProcess) {
-            foreach (BeamNode node in destinationNode.GetNodesFromRoot()) {
+            foreach (StateNode node in destinationNode.GetNodesFromRoot()) {
                 Mino mino = new Mino(node.MinoType, node.MinoState.rotation);
                 Vector2Int drawPos = game.FieldPosToGlobal(node.MinoState.x, node.MinoState.y);
                 Color minoColor = Color.Lerp(new Color(Constants.MinoColorCodes[node.MinoType]), Color.White, 0.3f);
@@ -76,5 +77,5 @@ public class StandardBotPlayer : BotPlayer {
         }
     }
 
-    public override string SearchSpeed => searcher.SearchSpeed;
+    public override string SearchSpeed => searcher.GetLastSearchStats().searchSpeed;
 }
