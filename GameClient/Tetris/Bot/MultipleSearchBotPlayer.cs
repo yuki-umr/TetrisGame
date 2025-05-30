@@ -33,7 +33,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
     }
 
     public override void Update() {
-        if (inputSystem.Route.Length <= 0) {
+        if (inputSystem.InputsLeft <= 0) {
             UpdateMino();
         }
         
@@ -79,7 +79,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
         
         if (bestNode != null) {
             nextNode = bestNode;
-            inputSystem.Route = nextNode.GetRoute();
+            inputSystem.SetCurrentRoute(nextNode.GetRoute());
 
             if (saveThisState) {
                 // serialize current game state

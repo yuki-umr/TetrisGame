@@ -5,16 +5,16 @@ using GameClient.Tetris.Input;
 namespace GameClient.Tetris.Pathfinding; 
 
 public class MinoRoute {
-    private List<InputKey> inputOrder;
-    private InputKey lastInput;
-    private int lastSrs;
-    private bool useHold;
-    private int cursor;
+    private readonly List<InputKey> inputOrder;
+    private readonly InputKey lastInput;
+    private readonly int lastSrs;
+    private readonly bool useHold;
 
-    public MinoRoute(List<InputKey> inputOrder, InputKey lastInput, int lastSrs) {
+    public MinoRoute(List<InputKey> inputOrder, InputKey lastInput, int lastSrs, bool useHold) {
         this.inputOrder = inputOrder;
         this.lastInput = lastInput;
         this.lastSrs = lastSrs;
+        this.useHold = useHold;
     }
 
     public bool HasRoute => inputOrder.Count > 0;
@@ -23,24 +23,25 @@ public class MinoRoute {
 
     public bool IsLastSrs4 => lastSrs == 4;
 
-    public int Length => inputOrder.Count - cursor;
+    public int GetLength(ref Cursor cursor) => inputOrder.Count - cursor.position + (cursor.holdQueued ? 1 : 0);
 
-    public InputKey PopKey() {
-        if (cursor >= inputOrder.Count) return InputKey.None;
-        InputKey nextKey = cursor == -1 ? InputKey.Hold : inputOrder[cursor];
-        cursor++;
+    public InputKey PopKey(ref Cursor cursor) {
+        if (cursor.holdQueued) {
+            cursor.holdQueued = false;
+            return InputKey.Hold;
+        }
+        
+        if (cursor.position >= inputOrder.Count) return InputKey.None;
+        InputKey nextKey = inputOrder[cursor.position];
+        cursor.position++;
         return nextKey;
     }
 
-    public void SetUseHold() {
-        if (useHold) return;
-        useHold = true;
-        cursor = -1;
+    public static MinoRoute GetDefault() {
+        return new MinoRoute(new List<InputKey>(), InputKey.None, -1, false);
     }
 
-    public static MinoRoute GetDefault() {
-        return new MinoRoute(new List<InputKey>(), InputKey.None, -1);
-    }
+    public Cursor CreateCursor() => new() { position = 0, holdQueued = useHold };
 
     public override string ToString() {
         StringBuilder sb = new StringBuilder();
@@ -52,5 +53,10 @@ public class MinoRoute {
 
         sb.Append(']');
         return sb.ToString();
+    }
+
+    public struct Cursor {
+        public int position;
+        public bool holdQueued;
     }
 }

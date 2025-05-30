@@ -9,7 +9,7 @@ namespace GameClient.Tetris.Pathfinding;
 public static class Pathfinder {
     private static Vector2Int fieldSize;
     
-    public static MinoRoute FindPath(int minoType, GameField gameField, MinoState minoState) {
+    public static MinoRoute FindPath(int minoType, GameField gameField, MinoState minoState, bool useHold) {
         PathNode[] nodes = GeneratePathNodeField(gameField.Size);
         
         MinoState endState = new MinoState(Constants.MinoSpawnPosition.x, Constants.MinoSpawnPosition.y, 0);
@@ -122,7 +122,7 @@ public static class Pathfinder {
         }
 
         ArrayPool<PathNode>.Shared.Return(nodes, true);
-        return new MinoRoute(inputs, lastInput, lastSrs);
+        return new MinoRoute(inputs, lastInput, lastSrs, useHold);
     }
 
     private static PathNode[] GeneratePathNodeField(Vector2Int size) {

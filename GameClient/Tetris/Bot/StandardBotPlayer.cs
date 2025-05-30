@@ -30,7 +30,7 @@ public class StandardBotPlayer : BotPlayer {
     }
 
     public override void Update() {
-        if (inputSystem.Route.Length <= 0) {
+        if (inputSystem.InputsLeft <= 0) {
             UpdateMino();
         }
         
@@ -41,7 +41,7 @@ public class StandardBotPlayer : BotPlayer {
         destinationNode = searcher.Search(game.State, nextNode, evaluator, out _);
         if (destinationNode != null) {
             nextNode = destinationNode.GetSubRootNode();
-            inputSystem.Route = nextNode.GetRoute();
+            inputSystem.SetCurrentRoute(nextNode.GetRoute());
             
             nextNode.GameState.SerializeToString();
         } else {

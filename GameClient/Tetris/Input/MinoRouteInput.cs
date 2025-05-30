@@ -4,8 +4,11 @@ using GameClient.Tetris.Pathfinding;
 namespace GameClient.Tetris.Input; 
 
 public class MinoRouteInput : InputSystem {
-    public MinoRoute Route { get; set; }
+    public MinoRoute Route { get; private set; }
     
+    public int InputsLeft => Route?.GetLength(ref cursor) ?? 0;
+    
+    private MinoRoute.Cursor cursor;
     private InputState inputState;
 
     public override InputState PopState() {
@@ -14,13 +17,18 @@ public class MinoRouteInput : InputSystem {
         return currentState;
     }
 
+    public void SetCurrentRoute(MinoRoute route) {
+        Route = route;
+        cursor = route.CreateCursor();
+    }
+
     public void Update() {
-        if (Route == null || Route.Length <= 0) {
+        if (Route == null || Route.GetLength(ref cursor) <= 0) {
             // Console.Error.WriteLine("MinoRouteInput: No route found");
             return;
         }
         
-        InputKey nextInput = Route.PopKey();
+        InputKey nextInput = Route.PopKey(ref cursor);
         inputState.SetState(nextInput, true);
     }
 }

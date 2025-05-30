@@ -20,8 +20,7 @@ public abstract class StateNode : IComparable<StateNode> {
     public bool IsRoot => Parent == null || convertedToRoot;
     public bool Expanded => ChildNodes != null;
 
-    // DOING generalize this
-    protected abstract StateNode CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold);
+    protected abstract void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold);
     
     protected StateNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode, bool useHold) {
         GameState = gameState.Copy();
@@ -82,7 +81,7 @@ public abstract class StateNode : IComparable<StateNode> {
             Evaluation eval = evaluator.EvaluateMove(gameStateBeforeLock, mino, state, Evaluation.patternsFound);
             GameState nextState = eval.gameStateAfterMove;
 
-            ChildNodes.Add(CreateChild(nextState, currentMinoType, state, eval, useHold));
+            CreateChild(nextState, currentMinoType, state, eval, useHold);
         }
     }
 
@@ -96,11 +95,9 @@ public abstract class StateNode : IComparable<StateNode> {
             // if there are other rotation variations, also try that (except for O piece)
             int variation = Mino.RotatedVariations[MinoType], testRotation = MinoState.rotation;
             do {
-                route = Pathfinder.FindPath(MinoType, Parent.GameState.Field, MinoState);
+                route = Pathfinder.FindPath(MinoType, Parent.GameState.Field, MinoState, UseHold);
                 testRotation += variation;
             } while (!route.HasRoute && testRotation < 4 && variation != 0);
-            
-            if (UseHold) route.SetUseHold();
         }
 
         return route;
