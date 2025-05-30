@@ -13,9 +13,11 @@ public class BeamNode : StateNode {
         return new BeamNode(gameState, -1, default, eval, null, false);
     }
 
-    protected override StateNode CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold) 
-        => new BeamNode(gameState, minoType, minoState, evaluation, this, useHold);
-    
+    protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold) {
+        BeamNode node = new(gameState, minoType, minoState, evaluation, this, useHold);
+        ChildNodes.Add(node);
+    }
+
     public static PriorityQueue<StateNode, int> ExpandNodes(List<StateNode> nodes, Evaluator evaluator) {
         PriorityQueue<StateNode, int> newNodes = new PriorityQueue<StateNode, int>(nodes.Count * 40);
         foreach (StateNode node in nodes) {
