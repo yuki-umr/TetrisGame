@@ -44,7 +44,7 @@ public class MinoRoute {
     public Cursor CreateCursor() => new() { position = 0, holdQueued = useHold };
 
     public override string ToString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         sb.Append('[');
         for (int i = 0; i < inputOrder.Count; i++) {
             sb.Append(i == -1 ? InputKey.Hold : inputOrder[i]);

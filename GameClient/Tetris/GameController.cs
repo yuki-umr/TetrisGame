@@ -170,19 +170,32 @@ public class GameController {
         return true;
     }
 
-    private bool RotateMino(bool clockwise) {
-        Statistics.OnStep();
-        Mino rotatedMino = currentMino.Rotated(clockwise);
+    public static bool TryPerformRotation(GameField field, Mino mino, MinoState state, bool clockwise, out MinoState newState, out int srsPattern) {
+        Mino rotatedMino = mino.Rotated(clockwise);
         // check every srs delta patterns and use the first match
         for (int i = 0; i < 5; i++) {
             Vector2Int srsDelta = rotatedMino.WallKickDelta(clockwise, i);
-            if (!state.Field.WillCollideMino(rotatedMino, minoPosition.x + srsDelta.x, minoPosition.y + srsDelta.y)) {
-                minoPosition += srsDelta;
-                lastSrs = i;
-                lastMove = GameMove.Spin;
-                currentMino = rotatedMino;
+            if (!field.WillCollideMino(rotatedMino, state.x + srsDelta.x, state.y + srsDelta.y)) {
+                newState = new MinoState(state.x + srsDelta.x, state.y + srsDelta.y, rotatedMino.rotation);
+                srsPattern = i;
                 return true;
             }
+        }
+        
+        // if all 5 srs check fails, rotation failed
+        newState = state;
+        srsPattern = -1;
+        return false;
+    }
+
+    private bool RotateMino(bool clockwise) {
+        Statistics.OnStep();
+        if (TryPerformRotation(state.Field, currentMino, CurrentMinoState, clockwise, out MinoState newState, out int srsPattern)) {
+            minoPosition = new Vector2Int(newState.x, newState.y);
+            lastSrs = srsPattern;
+            lastMove = GameMove.Spin;
+            currentMino = currentMino.Rotated(clockwise);
+            return true;
         }
         
         // if all 5 srs check fails, rotation failed

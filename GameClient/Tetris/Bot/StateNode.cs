@@ -20,15 +20,17 @@ public abstract class StateNode : IComparable<StateNode> {
     public bool IsRoot => Parent == null || convertedToRoot;
     public bool Expanded => ChildNodes != null;
 
-    protected abstract void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold);
+    protected abstract void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, MinoRoute route, bool useHold);
     
-    protected StateNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode, bool useHold) {
+    protected StateNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode,
+        MinoRoute route, bool useHold) {
         GameState = gameState.Copy();
         MinoType = minoType;
         MinoState = minoState;
         Evaluation = evaluation;
         Parent = parentNode;
         UseHold = useHold;
+        this.route = route;
     }
 
     public void ConvertToRootNode() {
@@ -67,9 +69,9 @@ public abstract class StateNode : IComparable<StateNode> {
         return Parent.GetEvaluationTotalInternal() + Evaluation.movement;
     }
 
-    public void ExpandChild(List<MinoState> childStates, Evaluator evaluator, bool useHold) {
+    public void ExpandChild(List<MinoPlacement> placements, Evaluator evaluator, bool useHold) {
         ChildNodes ??= new List<StateNode>();
-        foreach (MinoState state in childStates) {
+        foreach (MinoPlacement placement in placements) {
             GameState gameStateBeforeLock = GameState;
             if (useHold) {
                 gameStateBeforeLock = GameState.Copy();
@@ -78,10 +80,10 @@ public abstract class StateNode : IComparable<StateNode> {
 
             int currentMinoType = gameStateBeforeLock.CurrentMino;
             Mino mino = new(currentMinoType, 0);
-            Evaluation eval = evaluator.EvaluateMove(gameStateBeforeLock, mino, state, Evaluation.patternsFound);
+            Evaluation eval = evaluator.EvaluateMove(gameStateBeforeLock, mino, placement.state, Evaluation.patternsFound);
             GameState nextState = eval.gameStateAfterMove;
 
-            CreateChild(nextState, currentMinoType, state, eval, useHold);
+            CreateChild(nextState, currentMinoType, placement.state, eval, placement.route, useHold);
         }
     }
 
@@ -91,14 +93,15 @@ public abstract class StateNode : IComparable<StateNode> {
             return MinoRoute.GetDefault();
         }
 
-        if (route == null) {
-            // if there are other rotation variations, also try that (except for O piece)
-            int variation = Mino.RotatedVariations[MinoType], testRotation = MinoState.rotation;
-            do {
-                route = Pathfinder.FindPath(MinoType, Parent.GameState.Field, MinoState, UseHold);
-                testRotation += variation;
-            } while (!route.HasRoute && testRotation < 4 && variation != 0);
-        }
+        // if (route == null) {
+        //     // if there are other rotation variations, also try that (except for O piece)
+        //     int variation = Mino.RotatedVariations[MinoType], testRotation = MinoState.rotation;
+        //     do {
+        //         // DOING: any valid placements found at this point should always contain a route
+        //         route = PathfinderAStar.FindPath(MinoType, Parent.GameState.Field, MinoState, UseHold);
+        //         testRotation += variation;
+        //     } while (!route.HasRoute && testRotation < 4 && variation != 0);
+        // }
 
         return route;
     }
@@ -127,6 +130,11 @@ public abstract class StateNode : IComparable<StateNode> {
 
         return placeable;
     }
+
+    public List<MinoPlacement> ListPossibleMinoPlacements(int minoType, bool useHold) {
+        return Pathfinder.Instance.ListAllPossiblePlacements(minoType, GameState.Field, useHold);
+    }
+
 
     public int CompareTo(StateNode other) {
         return GetEvaluationTotalFromRoot() - other.GetEvaluationTotalFromRoot();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GameClient.Tetris.Pathfinding;
 
 namespace GameClient.Tetris;
 
@@ -12,8 +13,8 @@ public class MonteCarloNode : StateNode {
     private float totalSelectionWeight;
 
     public MonteCarloNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode,
-        bool useHold, int nodeIndex)
-        : base(gameState, minoType, minoState, evaluation, parentNode, useHold) {
+        MinoRoute route, bool useHold, int nodeIndex)
+        : base(gameState, minoType, minoState, evaluation, parentNode, route, useHold) {
         this.nodeIndex = nodeIndex;
         totalEvaluationToLeaf = evaluation;
     }
@@ -21,24 +22,25 @@ public class MonteCarloNode : StateNode {
     public static MonteCarloNode CreateRootNode(GameState gameState, Evaluator evaluator) {
         int fieldEvaluation = evaluator.EvaluateField(gameState.Field, out List<PatternMatchData> patterns);
         Evaluation eval = new(fieldEvaluation, 0, default, gameState, patterns);
-        MonteCarloNode rootNode = new(gameState, -1, default, eval, null, false, 0);
+        MonteCarloNode rootNode = new(gameState, -1, default, eval, null, null, false, 0);
         return rootNode;
     }
 
-    protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold) {
+    protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, MinoRoute route, bool useHold) {
         int newNodeIndex = ChildNodes.Count;
-        MonteCarloNode node = new(gameState, minoType, minoState, evaluation, this, useHold, newNodeIndex);
+        MonteCarloNode node = new(gameState, minoType, minoState, evaluation, this, route, useHold, newNodeIndex);
         ChildNodes.Add(node);
     }
 
     public void ExpandNode(Evaluator evaluator) {
         if (Expanded) return;
         
-        List<MinoState> childStates = ListMinoPlaceable(GameState.CurrentMino),
-            holdChildStates = ListMinoPlaceable(GameState.PeekMinoAfterHold());
+        // DOING: change the way possible placements are generated, so validity checks are done in a batch
+        List<MinoPlacement> childPlacements = ListPossibleMinoPlacements(GameState.CurrentMino, false),
+            holdChildPlacements = ListPossibleMinoPlacements(GameState.PeekMinoAfterHold(), true);
 
-        ExpandChild(childStates, evaluator, false);
-        ExpandChild(holdChildStates, evaluator, true);
+        ExpandChild(childPlacements, evaluator, false);
+        ExpandChild(holdChildPlacements, evaluator, true);
         
         // recalculate the selection weights
         selectionWeights.Clear();

@@ -1,20 +1,22 @@
 ﻿using System.Collections.Generic;
+using GameClient.Tetris.Pathfinding;
 
 namespace GameClient.Tetris;
 
 public class BeamNode : StateNode {
-    private BeamNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode, bool useHold) 
-        : base(gameState, minoType, minoState, evaluation, parentNode, useHold) {
+    private BeamNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode,
+        MinoRoute route, bool useHold) 
+        : base(gameState, minoType, minoState, evaluation, parentNode, route, useHold) {
     }
 
     public static BeamNode CreateRootNode(GameState gameState, Evaluator evaluator) {
         int fieldEvaluation = evaluator.EvaluateField(gameState.Field, out List<PatternMatchData> patterns);
         Evaluation eval = new(fieldEvaluation, 0, default, gameState, patterns);
-        return new BeamNode(gameState, -1, default, eval, null, false);
+        return new BeamNode(gameState, -1, default, eval, null, null, false);
     }
 
-    protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, bool useHold) {
-        BeamNode node = new(gameState, minoType, minoState, evaluation, this, useHold);
+    protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, MinoRoute route, bool useHold) {
+        BeamNode node = new(gameState, minoType, minoState, evaluation, this, route, useHold);
         ChildNodes.Add(node);
     }
 
@@ -26,11 +28,11 @@ public class BeamNode : StateNode {
                     newNodes.Enqueue(childNode, childNode.GetEvaluationTotalFromRoot());
                 }
             } else {
-                List<MinoState> childStates = node.ListMinoPlaceable(node.GameState.CurrentMino),
-                    holdChildStates = node.ListMinoPlaceable(node.GameState.PeekMinoAfterHold());
+                List<MinoPlacement> childPlacements = node.ListPossibleMinoPlacements(node.GameState.CurrentMino, false),
+                    holdChildPlacements = node.ListPossibleMinoPlacements(node.GameState.PeekMinoAfterHold(), true);
 
-                node.ExpandChild(childStates, evaluator, false);
-                node.ExpandChild(holdChildStates, evaluator, true);
+                node.ExpandChild(childPlacements, evaluator, false);
+                node.ExpandChild(holdChildPlacements, evaluator, true);
                 
                 foreach (StateNode childNode in node.ChildNodes) {
                     newNodes.Enqueue(childNode, childNode.GetEvaluationTotalFromRoot());

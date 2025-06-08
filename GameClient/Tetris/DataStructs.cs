@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using GameClient.Tetris.Pathfinding;
 using Microsoft.Xna.Framework;
 
 namespace GameClient.Tetris; 
@@ -276,6 +277,8 @@ public readonly struct MinoState : IEquatable<MinoState> {
         this.rotation = rotation;
     }
 
+    public static MinoState InitialState => new(Constants.MinoStartX, Constants.MinoStartY, 0);
+
     public bool Equals(MinoState other) {
         return x == other.x && y == other.y && rotation == other.rotation;
     }
@@ -296,9 +299,14 @@ public readonly struct MinoState : IEquatable<MinoState> {
     }
 }
 
-public readonly struct MinoPlacement {
+public class MinoPlacement {
     public readonly MinoState state;
+    public readonly MinoRoute route;
     
+    public MinoPlacement(MinoState state, MinoRoute route) {
+        this.state = state;
+        this.route = route;
+    }
 }
 
 public class GameStatistics {
