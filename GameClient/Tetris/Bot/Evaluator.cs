@@ -67,7 +67,7 @@ public class Evaluator {
 
         int fieldValue = EvaluateField(stateAfterLock.Field, out List<PatternMatchData> patternsFound);
 
-        Evaluation evaluation = new Evaluation(fieldValue, movementValue, result, stateAfterLock, patternsFound);
+        Evaluation evaluation = new(fieldValue, movementValue, result, stateAfterLock, patternsFound);
         return evaluation;
     }
 
@@ -197,11 +197,41 @@ public class Evaluator {
         if (settings.Genes is null) {
             return CreateLemonTea(settings);
         } else {
-            return CreateFromGeneValues(settings.Genes.Select(g => (int)g.Value));
+            return CreateFromGeneValues(settings.Genes.Select(g => -(int)g.Value));
         }
     } 
 
     public static Evaluator CreateLemonTea(BotSettings settings) {
+        FieldParameters field = new FieldParameters {
+            height = -41,
+            surround = -160,
+            ceiling = -32 - 64,
+            steepness = -30,
+            tsd = 152 + 64 + 20,
+            tst = 502,
+            preTsd = 20,
+            preTst = 30,
+            height10 = -150,
+            height15 = -600,
+            height18 = -999,
+            sSteepness = -7,
+            flatness = 9,
+            ceilDepth = -32,
+            wellDistance = new []{ -40, -20, -5, -2, 0 } // 21
+        };
+
+        MoveParameters move = new MoveParameters {
+            lineClear = new[] { -392, -193, -214, 270 },
+            tSpin = new[] { 52, 397, 785 },
+            tSpinMini = new[] { 0, 0 },
+            perfect = 1500,
+            tWasted = -134
+        };
+
+        return new Evaluator(field, move, settings);
+    }
+    
+    public static Evaluator CreateLemonTeaInverted(BotSettings settings) {
         FieldParameters field = new FieldParameters {
             height = 41,
             surround = 160,

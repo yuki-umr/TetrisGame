@@ -93,16 +93,6 @@ public abstract class StateNode : IComparable<StateNode> {
             return MinoRoute.GetDefault();
         }
 
-        // if (route == null) {
-        //     // if there are other rotation variations, also try that (except for O piece)
-        //     int variation = Mino.RotatedVariations[MinoType], testRotation = MinoState.rotation;
-        //     do {
-        //         // DOING: any valid placements found at this point should always contain a route
-        //         route = PathfinderAStar.FindPath(MinoType, Parent.GameState.Field, MinoState, UseHold);
-        //         testRotation += variation;
-        //     } while (!route.HasRoute && testRotation < 4 && variation != 0);
-        // }
-
         return route;
     }
     

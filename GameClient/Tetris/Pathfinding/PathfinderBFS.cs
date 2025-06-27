@@ -30,7 +30,6 @@ public class PathfinderBFS : Pathfinder {
             TryAddPlacement(stateFrom);
         }
 
-        if (placements.Count > 0) Console.WriteLine(placements.Values.First().route.ToString());
         return new List<MinoPlacement>(placements.Values);
 
         void AddNodeAfterInput(Node node, MinoState currentState, InputKey input) {

@@ -1,4 +1,6 @@
-﻿namespace GameClient.Tetris;
+﻿using System;
+
+namespace GameClient.Tetris;
 
 public class MonteCarloSearcher : ISearcher {
     public string SearcherInfo { get; }
@@ -20,25 +22,37 @@ public class MonteCarloSearcher : ISearcher {
         }
 
         searchProcess = new MonteCarloSearchProcess();
+        Console.WriteLine($"AAA: start search from depth {rootNode.NodeDepth}---------------------------------------");
+        MonteCarloNode.CreatedChildNodesCount = 0;
         for (int i = 0; i < fixedIterations; i++) {
             SingleIteration(rootNode, evaluator);
         }
+
+        Console.WriteLine();
+        Console.WriteLine($"{MonteCarloNode.CreatedChildNodesCount} nodes created in {fixedIterations} iterations");
+        Console.WriteLine("----------------------------------------");
+        Console.WriteLine(rootNode.GetSearchDepth());
 
         return rootNode.GetBestChild();
     }
 
     public SearchStats GetLastSearchStats() {
-        throw new System.NotImplementedException();
+        // TODO: Implement a way to track and return search statistics
+        return new SearchStats("", "", "");
     }
 
     private void SingleIteration(MonteCarloNode rootNode, Evaluator evaluator) {
         // 1. Traverse the tree to select a node to expand
         MonteCarloNode currentNode = rootNode;
-        while (currentNode.Expanded) {
+        while (currentNode != null && currentNode.Expanded) {
             currentNode = currentNode.VisitWeightedRandomChild();
         }
         
-        // DOING: remove nodes with no route
+        if (currentNode == null) {
+            // No valid node found, return early
+            return;
+        }
+        
         // 2. Generate child nodes with all possible moves, and evaluate them 
         currentNode.ExpandNode(evaluator);
         
