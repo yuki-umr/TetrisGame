@@ -164,7 +164,12 @@ public class PathfinderAStar : Pathfinder {
     }
 
     private static PathNode GetNode(PathNode[] nodes, MinoState state) {
-        return nodes[(state.x + 2) + (state.y + 2) * fieldSize.x + state.rotation * fieldSize.x * fieldSize.y];
+        int index = (state.x + 2) + (state.y + 2) * fieldSize.x + state.rotation * fieldSize.x * fieldSize.y;
+        if (index < 0 || index >= nodes.Length) {
+            throw new IndexOutOfRangeException($"Index {index} out of bounds for field size {fieldSize.x}x{fieldSize.y} with state {state}");
+        }
+        
+        return nodes[index];
     }
 
     private static void SetNode(PathNode[] nodes, MinoState state, PathNode node) {

@@ -25,7 +25,7 @@ public class BeamNode : StateNode {
         foreach (StateNode node in nodes) {
             if (node.Expanded) {
                 foreach (StateNode childNode in node.ChildNodes) {
-                    newNodes.Enqueue(childNode, childNode.GetEvaluationTotalFromRoot());
+                    newNodes.Enqueue(childNode, -childNode.GetEvaluationTotalFromRoot()); // negate the evaluation to prioritize "higher" scores
                 }
             } else {
                 List<MinoPlacement> childPlacements = node.ListPossibleMinoPlacements(node.GameState.CurrentMino, false),
@@ -35,7 +35,7 @@ public class BeamNode : StateNode {
                 node.ExpandChild(holdChildPlacements, evaluator, true);
                 
                 foreach (StateNode childNode in node.ChildNodes) {
-                    newNodes.Enqueue(childNode, childNode.GetEvaluationTotalFromRoot());
+                    newNodes.Enqueue(childNode, -childNode.GetEvaluationTotalFromRoot());
                 }
             }
         }

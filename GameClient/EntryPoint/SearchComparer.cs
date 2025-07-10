@@ -5,7 +5,7 @@ using System.Threading;
 namespace GameClient.EntryPoint;
 
 public class SearchComparer {
-    private const int MaxStep = 5000, MaxAttempt = 40, InitialSeed = 0;
+    private const int MaxStep = 50, MaxAttempt = 4, InitialSeed = 0;
     private const int Threads = 4;
     
     public SearchComparer() {
@@ -18,7 +18,8 @@ public class SearchComparer {
 
     private void CreateBotThread(int threadId) {
         int seed = InitialSeed + MaxAttempt * threadId;
-        string argString = $"--mainClass GameNoWindow --subClass SearchCompareClient --args maxStep={MaxStep} maxAttempt={MaxAttempt} initialSeed={seed}";
+        string argString = $"--mainClass {nameof(GameNoWindow)} --subClass {nameof(SearchCompareClient)} " +
+                           $"--args maxStep={MaxStep} maxAttempt={MaxAttempt} initialSeed={seed}";
         Thread thread = new Thread(args => Program.Main(((ThreadArgs)args!).ToArgs()));
         thread.Start(new ThreadArgs(argString, threadId));
     }

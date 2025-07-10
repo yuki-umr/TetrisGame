@@ -32,7 +32,8 @@ public class Evaluator {
             field.tst = Convert.ToInt32(field.tst * this.settings.TstWeightMod);
             move.tSpin[2] = Convert.ToInt32(move.tSpin[2] * this.settings.TstWeightMod);
 
-            move.lineClear[1] = this.settings.DoubleLineWeight;
+            if (this.settings.OverrideDoubleWeight) 
+                move.lineClear[1] = this.settings.DoubleLineWeight;
         }
         
 

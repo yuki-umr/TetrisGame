@@ -11,8 +11,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     private readonly GameController game;
     private readonly MinoRouteInput inputSystem;
-    private readonly List<(BeamSearcher, Evaluator)> searchers;
-    private readonly int minimumSearchDepth;
+    private readonly List<SearcherSet> searchers;
 
     private StateNode nextNode;
 
@@ -20,14 +19,13 @@ public class MultipleSearchBotPlayer : BotPlayer {
         this.game = game;
         this.inputSystem = inputSystem;
 
-        searchers = new List<(BeamSearcher, Evaluator)>();
+        searchers = new List<SearcherSet>();
         foreach (BotSettings setting in settings) {
             Evaluator evaluator = Evaluator.GetDefault(setting);
-            BeamSearcher searcher = new BeamSearcher(setting.BeamDepth, setting.BeamWidth);
-            searchers.Add((searcher, evaluator));
+            ISearcher searcher = setting.GetSearcher();
+            searchers.Add(new SearcherSet { searcher = searcher, evaluator = evaluator });
         }
 
-        minimumSearchDepth = searchers.Min(s => s.Item1.nextSeek);
         game.ChangeInputMode();
         UpdateMino();
     }
@@ -43,39 +41,17 @@ public class MultipleSearchBotPlayer : BotPlayer {
     private void UpdateMino() {
         StateNode bestNode = null;
         HashSet<GameState> bestStates = new HashSet<GameState>();
-        List<Pattern>[] foundPatterns = new List<Pattern>[minimumSearchDepth];
         bool saveThisState = false;
-        foreach (var (searcher, evaluator) in searchers) {
+        foreach ((ISearcher searcher, Evaluator evaluator) in searchers) {
             StateNode node = searcher.Search(game.State, null, evaluator, out _);
             if (node == null) continue;
-            List<StateNode> nodes = node.GetNodesFromRoot();
-            for (var i = 0; i < minimumSearchDepth; i++) {
-                List<Pattern> newPatterns = nodes[i].Evaluation.patternsFound
-                    .Select(p => p.pattern)
-                    .Where(p => p.checkMinoPlacement)
-                    .OrderBy(p => p.patternIndex).ToList();
-                if (foundPatterns[i] == null) {
-                    foundPatterns[i] = newPatterns;
-                } else {
-                    // if there are any new patterns not found in the previous search, flag this state
-                    if (foundPatterns[i].Count != newPatterns.Count) continue;
-                    bool sequenceEqual = true;
-                    for (int j = 0; j < newPatterns.Count; j++) {
-                        if (foundPatterns[i][j].patternIndex != newPatterns[j].patternIndex) sequenceEqual = false;
-                    }
-
-                    if (sequenceEqual) continue;
-                    // Console.WriteLine($"[{string.Join(", ", foundPatterns[i].Select(p => p.patternIndex))}] != [{string.Join(", ", newPatterns.Select(p => p.patternIndex))}]");
-                    saveThisState = true;
-                }
-            }
             
             bestNode ??= node = node.GetSubRootNode();
             bestStates.Add(node.GameState);
         }
 
         // Compare the first move and save if any searcher made a different move
-        // saveThisState = bestStates.Count > 1;
+        saveThisState = bestStates.Count > 1;
         
         if (bestNode != null) {
             nextNode = bestNode;
@@ -94,5 +70,15 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     public override void Draw(SpriteBatch spriteBatch) { }
 
-    public override string SearchSpeed => searchers[0].Item1.GetLastSearchStats().searchSpeed;
+    public override string SearchSpeed => searchers[0].searcher.GetLastSearchStats().searchSpeed;
+
+    private class SearcherSet {
+        public ISearcher searcher;
+        public Evaluator evaluator;
+        
+        public void Deconstruct(out ISearcher searcher, out Evaluator evaluator) {
+            searcher = this.searcher;
+            evaluator = this.evaluator;
+        }
+    }
 }

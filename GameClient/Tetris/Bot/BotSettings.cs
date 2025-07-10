@@ -4,89 +4,80 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using GeneticSharp;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace GameClient.Tetris; 
 
 public class BotSettings {
     public const string SerializedRegex = "[a-zA-Z0-9[\\];]+", SerializedRegexSequence = "[a-zA-Z0-9[\\];,]+";
-    private static readonly Dictionary<string, PropertyInfo> AllProperties = new();
     
     // bool, float, int, string is currently supported (Gene[] is ignored)
-    [Label("tsd")] public bool NoTsd { get; init; } = false;
-    [Label("tst")] public bool NoTst { get; init; } = false;
-    [Label("pc")] public bool NoPatternCheck { get; init; } = false;
-    [Label("wwp")] public bool NoWallWellPenalty { get; init; } = false;
-    [Label("wb")] public bool NoInnerWellBonus { get; init; } = false;
-    [Label("wwh")] public bool FixedWellHeight { get; init; } = true;
-    [Label("tw")] public bool CheckTWaste { get; init; } = false;
-    [Label("wwm")] public int WallWellMultiplier { get; init; } = 3;
-    [Label("bw")] public int BeamWidth { get; init; } = 12;
-    [Label("bd")] public int BeamDepth { get; init; } = 5;
-    [Label("wwcc")] public bool WallWellCcBased { get; init; } = false;
-    [Label("dmod")] public float TsdWeightMod { get; init; } = 2;
-    [Label("ptst")] public int PreTstWeight { get; init; } = -40;
-    [Label("tmod")] public float TstWeightMod { get; init; } = 1;
-    [Label("pdmod")] public int PreTsdWeight { get; init; } = -100;
-    [Label("dw")] public int DoubleLineWeight { get; init; } = 450;
+    [JsonProperty("tsd")] public bool NoTsd { get; set; } = false;
+    [JsonProperty("tst")] public bool NoTst { get; set; } = false;
+    [JsonProperty("pc")] public bool NoPatternCheck { get; set; } = false;
+    [JsonProperty("wwp")] public bool NoWallWellPenalty { get; set; } = false;
+    [JsonProperty("wb")] public bool NoInnerWellBonus { get; set; } = false;
+    [JsonProperty("wwh")] public bool FixedWellHeight { get; set; } = true;
+    [JsonProperty("tw")] public bool CheckTWaste { get; set; } = false;
+    [JsonProperty("wwm")] public int WallWellMultiplier { get; set; } = 3;
+    [JsonProperty("wwcc")] public bool WallWellCcBased { get; set; } = false;
+    [JsonProperty("dmod")] public float TsdWeightMod { get; set; } = 2;
+    [JsonProperty("ptst")] public int PreTstWeight { get; set; } = 40;
+    [JsonProperty("tmod")] public float TstWeightMod { get; set; } = 1;
+    [JsonProperty("pdmod")] public int PreTsdWeight { get; set; } = 100;
+    [JsonProperty("odw")] public bool OverrideDoubleWeight { get; set; } = false;
+    [JsonProperty("dw")] public int DoubleLineWeight { get; set; } = -450;
 
     // Flags to disable certain evaluation functions
-    [Label("nh")] public bool NoHeight { get; init; } = false;
-    [Label("nc")] public bool NoCeiling { get; init; } = false;
-    [Label("ncd")] public bool NoCeilDepth { get; init; } = false;
-    [Label("ns")] public bool NoSteepness { get; init; } = false;
-    [Label("nss")] public bool NoSSteepness { get; init; } = false;
-    [Label("nf")] public bool NoFlatness { get; init; } = false;
-    [Label("nhl")] public bool NoHeightLevel { get; init; } = false;
-    [Label("nw")] public bool NoWellDistance { get; init; } = false;
+    [JsonProperty("nh")] public bool NoHeight { get; set; } = false;
+    [JsonProperty("nc")] public bool NoCeiling { get; set; } = false;
+    [JsonProperty("ncd")] public bool NoCeilDepth { get; set; } = false;
+    [JsonProperty("ns")] public bool NoSteepness { get; set; } = false;
+    [JsonProperty("nss")] public bool NoSSteepness { get; set; } = false;
+    [JsonProperty("nf")] public bool NoFlatness { get; set; } = false;
+    [JsonProperty("nhl")] public bool NoHeightLevel { get; set; } = false;
+    [JsonProperty("nw")] public bool NoWellDistance { get; set; } = false;
     
     // Genetic Algorithm
-    [Label("gene")] public Gene[] Genes { get; init; } = null;
-
-    private List<PropertyInfo> modifiedProps;
-
-    static BotSettings() {
-        PropertyInfo[] props = typeof(BotSettings).GetProperties();
-        foreach (PropertyInfo prop in props) {
-            LabelAttribute label = prop.GetCustomAttribute<LabelAttribute>();
-            Debug.Assert(label != null);
-            bool exists = AllProperties.ContainsKey(label.Label);
-            Debug.Assert(!exists, $"BotSettings: Bot settings label \"{label.Label}\" is defined multiple times");
-            AllProperties.Add(label.Label, prop);
-        }
+    [JsonProperty("gene")] public Gene[] Genes { get; set; } = null;
+    
+    // switching between different search algorithms
+    [JsonProperty("beam")] public SearchAlgorithm SearchType { get; set; } = SearchAlgorithm.Beam;
+    [JsonProperty("bw")] public int BeamWidth { get; set; } = 12;
+    [JsonProperty("bd")] public int BeamDepth { get; set; } = 5;
+    [JsonProperty("mcit")] public int MCTSIterations { get; set; } = 1000;
+    
+    public enum SearchAlgorithm {
+        Beam, MCTS
     }
+
+    private List<PropertyInfo> modifiedPropsCache;
 
     public BotSettings() { }
 
-    public BotSettings(string settings) {
+    public static BotSettings Deserialize(string settings) {
         byte[] bytes = Convert.FromBase64String(ToUnsafeSerial(settings));
-        using MemoryStream stream = new MemoryStream(bytes);
-        using BinaryReader reader = new BinaryReader(stream);
-
-        int modifiedCount = reader.ReadByte();
-        for (int i = 0; i < modifiedCount; i++) {
-            string label = reader.ReadString();
-            if (!AllProperties.ContainsKey(label)) {
-                Console.WriteLine($"BotSettings: Failed to load settings from string {settings}, label \"{label}\" is not defined");
-                return;
-            }
-            
-            PropertyInfo prop = AllProperties[label];
-            if (prop.PropertyType == typeof(bool)) {
-                prop.SetValue(this, reader.ReadBoolean());
-            } else if (prop.PropertyType == typeof(float)) {
-                prop.SetValue(this, reader.ReadSingle());
-            } else if (prop.PropertyType == typeof(int)) {
-                prop.SetValue(this, reader.ReadInt32());
-            } else if (prop.PropertyType == typeof(string)) {
-                prop.SetValue(this, reader.ReadString());
-            } else {
-                Console.Error.WriteLine($"BotSettings: Read function not implemented for type {prop.PropertyType}");
-            }
-        }
+        using MemoryStream stream = new(bytes);
+        using BsonDataReader reader = new(stream);
+        JsonSerializer serializer = new();
+        BotSettings deserialized = serializer.Deserialize<BotSettings>(reader);
+        
+        return deserialized ?? new BotSettings();
     }
 
     public object GetProperty(string propName) => typeof(BotSettings).GetProperty(propName)!.GetValue(this);
     public void SetProperty(string propName, object value) => typeof(BotSettings).GetProperty(propName)!.SetValue(this, value);
+    
+    public ISearcher GetSearcher() {
+        if (SearchType == SearchAlgorithm.Beam) {
+            return new BeamSearcher(BeamWidth, BeamDepth);
+        } else if (SearchType == SearchAlgorithm.MCTS) {
+            return new MonteCarloSearcher(MCTSIterations);
+        } else {
+            throw new NotSupportedException($"Search algorithm {SearchType} is not supported.");
+        }
+    }
 
     public static List<BotSettings> GenerateAllSettings(BotSettingsVarianceOptions options) {
         BotSettings template = new BotSettings();
@@ -125,14 +116,14 @@ public class BotSettings {
     public BotSettings Clone() => (BotSettings)MemberwiseClone();
 
     public List<PropertyInfo> GetModifiedProperties(BotSettings baseSettings = null, bool forceRefresh = false) {
-        if (modifiedProps is not null && baseSettings is null && !forceRefresh) return modifiedProps;
+        if (modifiedPropsCache is not null && baseSettings is null && !forceRefresh) return modifiedPropsCache;
         
         // Uses reflection to find deltas
         PropertyInfo[] props = typeof(BotSettings).GetProperties();
         List<PropertyInfo> baseModifiedProps;
         if (baseSettings is null) {
-            modifiedProps = new List<PropertyInfo>();
-            baseModifiedProps = modifiedProps;
+            modifiedPropsCache = new List<PropertyInfo>();
+            baseModifiedProps = modifiedPropsCache;
         } else {
             baseModifiedProps = new List<PropertyInfo>();
         }
@@ -147,26 +138,11 @@ public class BotSettings {
     }
 
     public string Serialized() {
-        using MemoryStream stream = new MemoryStream();
-        using BinaryWriter writer = new BinaryWriter(stream);
-        writer.Write((byte) GetModifiedProperties().Count);
-        foreach (PropertyInfo prop in GetModifiedProperties()) {
-            string label = prop.GetCustomAttribute<LabelAttribute>()!.Label;
-            writer.Write(label);
-            
-            object value = prop.GetValue(this);
-            if (value is bool b) {
-                writer.Write(b);
-            } else if (value is float f) {
-                writer.Write(f);
-            } else if (value is int i) {
-                writer.Write(i);
-            } else if (value is string s) {
-                writer.Write(s);
-            } else {
-                Console.Error.WriteLine($"BotSettings: Write function not implemented for type {value.GetType()}");
-            }
-        }
+        using MemoryStream stream = new();
+        using BsonDataWriter writer = new(stream);
+
+        JsonSerializer serializer = new();
+        serializer.Serialize(writer, this);
 
         string base64 = Convert.ToBase64String(stream.ToArray());
         return ToSafeSerial(base64);
@@ -174,15 +150,6 @@ public class BotSettings {
     
     private static string ToSafeSerial(string unsafeSerial) => unsafeSerial.Replace('/', '[').Replace('+', ']').Replace('=', ';');
     private static string ToUnsafeSerial(string safeSerial) => safeSerial.Replace('[', '/').Replace(']', '+').Replace(';', '=');
-
-    [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
-    private sealed class LabelAttribute : Attribute {
-        public string Label { get; }
-        
-        public LabelAttribute(string label) {
-            Label = label;
-        }
-    }
 }
 
 public class BotSettingsVarianceOptions {

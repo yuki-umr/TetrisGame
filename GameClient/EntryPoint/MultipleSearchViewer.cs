@@ -24,7 +24,7 @@ public class MultipleSearchViewer : WindowManager {
     public override bool FixedTimeStep => true;
     public override int MinimumFrameTime => 4;
 
-    private string folderName = "221206";
+    private string folderName = "250710";
 
     private int nodeIndex, favoriteIndex, maxDepth;
     private bool favoriteOnlyMode;
@@ -60,7 +60,7 @@ public class MultipleSearchViewer : WindowManager {
         Console.WriteLine(searchFiles.Length);
         foreach (string file in searchFiles) {
             string json = File.ReadAllText(file);
-            MultipleSearchResult searchResult = JsonConvert.DeserializeObject<MultipleSearchResult>(json);
+            MultipleSearchResult searchResult = JsonConvert.DeserializeObject<MultipleSearchResult>(json); // DOING: json is a list of string
             Debug.Assert(searchResult != null, nameof(searchResult) + " is null");
             List<GameState> deserializedStates = searchResult.variedStates.Select(GameState.DeserializeFromString).ToList();
             originalStates.AddRange(deserializedStates);
@@ -228,7 +228,7 @@ public class MultipleSearchViewer : WindowManager {
         public readonly BotSettings settings;
 
         public SearchPair(string botFlags) {
-            settings = new BotSettings(botFlags);
+            settings = BotSettings.Deserialize(botFlags);
             searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
             evaluator = Evaluator.GetDefault(settings);
         }

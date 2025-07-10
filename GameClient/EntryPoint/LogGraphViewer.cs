@@ -84,7 +84,7 @@ public class LogGraphViewer : WindowManager {
         BotSettings baseSettings = null;
         foreach (string file in plotFiles) {
             string serializedSetting = Regex.Match(file, $"_st{BotSettings.SerializedRegex}").Value[3..];
-            BotSettings settings = new BotSettings(serializedSetting);
+            BotSettings settings = BotSettings.Deserialize(serializedSetting);
             if (baseSettings == null) {
                 baseSettings = settings;
                 foreach (PropertyInfo prop in typeof(BotSettings).GetProperties()) {

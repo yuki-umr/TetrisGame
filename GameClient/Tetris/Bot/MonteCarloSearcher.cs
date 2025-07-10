@@ -22,16 +22,10 @@ public class MonteCarloSearcher : ISearcher {
         }
 
         searchProcess = new MonteCarloSearchProcess();
-        Console.WriteLine($"AAA: start search from depth {rootNode.NodeDepth}---------------------------------------");
         MonteCarloNode.CreatedChildNodesCount = 0;
         for (int i = 0; i < fixedIterations; i++) {
             SingleIteration(rootNode, evaluator);
         }
-
-        Console.WriteLine();
-        Console.WriteLine($"{MonteCarloNode.CreatedChildNodesCount} nodes created in {fixedIterations} iterations");
-        Console.WriteLine("----------------------------------------");
-        Console.WriteLine(rootNode.GetSearchDepth());
 
         return rootNode.GetBestChild();
     }

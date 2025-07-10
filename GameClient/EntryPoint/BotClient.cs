@@ -116,7 +116,7 @@ public class PlayOutResult {
 
     public PlayOutResult(string serializedSettings) {
         this.serializedSettings = serializedSettings;
-        settings = new BotSettings(serializedSettings);
+        settings = BotSettings.Deserialize(serializedSettings);
         statistics = new List<GameStatistics>();
     }
 }
