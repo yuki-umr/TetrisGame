@@ -90,5 +90,11 @@ public class SearchCompareClient : WindowManager {
 [Serializable]
 public class MultipleSearchResult {
     public readonly List<string> botSettings = new();
-    public readonly List<string> variedStates = new();
+    public readonly List<VariedState> variedStates = new();
+}
+
+[Serializable]
+public class VariedState {
+    public int searchSeed;
+    public string stateHash;
 }

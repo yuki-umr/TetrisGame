@@ -104,14 +104,14 @@ public class MonteCarloNode : StateNode {
     }
 
     public MonteCarloNode GetBestChild() {
-        if (ChildNodes.Count == 0) return null;
+        if (ChildNodes is null || ChildNodes.Count == 0) return null;
         return (MonteCarloNode)ChildNodes[bestChildIndex];
     }
 
     public MonteCarloNode VisitWeightedRandomChild() {
         if (ChildNodes.Count == 0) return null;
 
-        float randomValue = Random.Shared.NextSingle() * totalSelectionWeight;
+        float randomValue = RandomGen.Float(totalSelectionWeight);
         MonteCarloNode node = (MonteCarloNode)ChildNodes[0];
         for (int i = 0; i < selectionWeights.Count; i++) {
             randomValue -= selectionWeights[i];

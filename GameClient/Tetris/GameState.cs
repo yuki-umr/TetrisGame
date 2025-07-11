@@ -3,7 +3,7 @@ using System.IO;
 
 namespace GameClient.Tetris;
 
-public class GameState : IStateSerializable {
+public class GameState : IStateSerializable, IEquatable<GameState> {
     public GameField Field { get; private init; }
     private MinoBag minoBag;
 
@@ -134,7 +134,7 @@ public class GameState : IStateSerializable {
         // throw new NotImplementedException();
     }
 
-    private bool Equals(GameState other) {
+    public bool Equals(GameState other) {
         return Equals(Field, other.Field) && Equals(minoBag, other.minoBag) && CurrentMino == other.CurrentMino
                && HoldingMino == other.HoldingMino && RenCount == other.RenCount && BackToBack == other.BackToBack;
     }

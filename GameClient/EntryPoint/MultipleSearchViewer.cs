@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using GameClient.Tetris;
 using GameClient.Tetris.Input;
 using Microsoft.Xna.Framework.Graphics;
@@ -24,7 +23,7 @@ public class MultipleSearchViewer : WindowManager {
     public override bool FixedTimeStep => true;
     public override int MinimumFrameTime => 4;
 
-    private string folderName = "250710";
+    private string folderName = "250711";
 
     private int nodeIndex, favoriteIndex, maxDepth;
     private bool favoriteOnlyMode;
@@ -33,7 +32,7 @@ public class MultipleSearchViewer : WindowManager {
     private readonly SortedSet<int> favoriteIndexes = new();
     private List<int> favoriteIndexList = new();
     private readonly List<SearchPair> searchPairs = new();
-    private readonly List<GameState> originalStates = new();
+    private readonly List<OriginalState> originalStates = new();
     private readonly List<ColoredGameField> originalFields = new();
     private readonly List<List<(ColoredGameField, StateNode)>> nodeFields = new();
 
@@ -60,19 +59,26 @@ public class MultipleSearchViewer : WindowManager {
         Console.WriteLine(searchFiles.Length);
         foreach (string file in searchFiles) {
             string json = File.ReadAllText(file);
-            MultipleSearchResult searchResult = JsonConvert.DeserializeObject<MultipleSearchResult>(json); // DOING: json is a list of string
+            MultipleSearchResult searchResult = JsonConvert.DeserializeObject<MultipleSearchResult>(json);
             Debug.Assert(searchResult != null, nameof(searchResult) + " is null");
-            List<GameState> deserializedStates = searchResult.variedStates.Select(GameState.DeserializeFromString).ToList();
-            originalStates.AddRange(deserializedStates);
+            
+            foreach (VariedState variedState in searchResult.variedStates) {
+                GameState state = GameState.DeserializeFromString(variedState.stateHash);
+                OriginalState originalState = new() {
+                    searchSeed = variedState.searchSeed,
+                    state = state
+                };
+                
+                originalStates.Add(originalState);
+                originalFields.Add(state.Field.ConvertToColored());
+            }
             
             serializedSettings ??= searchResult.botSettings.ToArray();
         }
         
-        originalFields.AddRange(originalStates.Select(s => s.Field.ConvertToColored()));
-        
         searchPairs.AddRange(serializedSettings!.Select(setting => new SearchPair(setting)));
 
-        maxDepth = searchPairs.Min(pair => pair.searcher.nextSeek);
+        maxDepth = searchPairs.Min(pair => pair.settings.BeamDepth); // use the minimum beam depth for now
         UpdateViewNode();
         LoadFavorite();
     }
@@ -98,18 +104,26 @@ public class MultipleSearchViewer : WindowManager {
     }
 
     private void UpdateViewNode() {
-        GameState selectedState = originalStates[CurrentNodeIndex];
+        OriginalState selectedState = originalStates[CurrentNodeIndex];
         nodeFields.Clear();
         
         for (var i = 0; i < searchPairs.Count; i++) {
             var searcher = searchPairs[i];
-            StateNode bestNode = searcher.BeamSearch(selectedState);
-            List<StateNode> nodes = bestNode.GetNodesFromRoot();
+            
+            RandomGen.SetSeed(selectedState.searchSeed); // reset the search seed every time
+            StateNode bestNode = searcher.Search(selectedState.state);
+            List<StateNode> nodes = bestNode.GetNodesFromRoot(); // DOING: why is this working when bestNode is the root node?
             nodeFields.Add(new List<(ColoredGameField, StateNode)>());
             
             // nodes.Count -> maximum depth
             // maxDepth -> clamped depth
             for (var j = 0; j < maxDepth; j++) {
+                if (j >= nodes.Count) {
+                    // If the node does not exist, fill with empty field
+                    nodeFields[i].Add((new ColoredGameField(), nodes.Last()));
+                    continue;
+                }
+                
                 // Save parent colored field for rendering
                 ColoredGameField coloredField = nodes[j].Parent.GameState.Field.ConvertToColored();
                 nodeFields[i].Add((coloredField, nodes[j]));
@@ -118,7 +132,7 @@ public class MultipleSearchViewer : WindowManager {
     }
 
     protected override void OnDraw(GraphicsDevice graphicsDevice, SpriteBatch spriteBatch) {
-        GameState selectedState = originalStates[CurrentNodeIndex];
+        GameState selectedState = originalStates[CurrentNodeIndex].state;
         originalFields[CurrentNodeIndex].Draw(spriteBatch, BaseOffset.x, BaseOffset.y, BlockSize * 2);
         
         Mino currentMino = new Mino(selectedState.CurrentMino, 0);
@@ -223,18 +237,23 @@ public class MultipleSearchViewer : WindowManager {
     }
 
     private class SearchPair {
-        public readonly BeamSearcher searcher;
+        public readonly ISearcher searcher;
         private readonly Evaluator evaluator;
         public readonly BotSettings settings;
 
         public SearchPair(string botFlags) {
             settings = BotSettings.Deserialize(botFlags);
-            searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
+            searcher = settings.GetSearcher();
             evaluator = Evaluator.GetDefault(settings);
         }
 
-        public StateNode BeamSearch(GameState state) {
+        public StateNode Search(GameState state) {
             return searcher.Search(state, null, evaluator, out _);
         }
+    }
+
+    private class OriginalState {
+        public int searchSeed;
+        public GameState state;
     }
 }

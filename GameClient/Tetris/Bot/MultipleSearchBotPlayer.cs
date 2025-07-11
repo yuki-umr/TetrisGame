@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using GameClient.EntryPoint;
 using GameClient.Tetris.Input;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace GameClient.Tetris; 
 
 public class MultipleSearchBotPlayer : BotPlayer {
-    public readonly List<string> VariedStates = new();
+    public readonly List<VariedState> VariedStates = new();
 
     private readonly GameController game;
     private readonly MinoRouteInput inputSystem;
@@ -40,14 +41,23 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     private void UpdateMino() {
         StateNode bestNode = null;
-        HashSet<GameState> bestStates = new HashSet<GameState>();
+        Dictionary<GameState, StateNode> bestStates = new();
         bool saveThisState = false;
+
+        int searchSeed = RandomGen.ResetSeed();
         foreach ((ISearcher searcher, Evaluator evaluator) in searchers) {
-            StateNode node = searcher.Search(game.State, null, evaluator, out _);
-            if (node == null) continue;
+            // some searchers like MCTS uses random while searching, we need to set a seed to get consistent results
+            RandomGen.SetSeed(searchSeed);
+            StateNode destinationNode = searcher.Search(game.State, null, evaluator, out _);
+            if (destinationNode == null) continue;
             
-            bestNode ??= node = node.GetSubRootNode();
-            bestStates.Add(node.GameState);
+            StateNode searcherNextNode = destinationNode.GetSubRootNode();
+            bestNode ??= searcherNextNode;
+            if (bestStates.TryAdd(searcherNextNode.GameState, searcherNextNode)) {
+                if (searcher is MonteCarloSearcher) {
+                    Console.WriteLine($"AAA: {destinationNode.GetNodesFromRoot().Count}"); // DOING: usage of GetNodesFromRoot() is wrong, it must be used for the "leaf node" only
+                } 
+            }
         }
 
         // Compare the first move and save if any searcher made a different move
@@ -60,7 +70,12 @@ public class MultipleSearchBotPlayer : BotPlayer {
             if (saveThisState) {
                 // serialize current game state
                 string stateHash = nextNode.Parent.GameState.SerializeToString();
-                VariedStates.Add(stateHash);
+                VariedState variedState = new() {
+                    searchSeed = searchSeed,
+                    stateHash = stateHash
+                };
+                
+                VariedStates.Add(variedState);
             }
         } else {
             Console.WriteLine("no route found, killing game");

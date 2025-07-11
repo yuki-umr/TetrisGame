@@ -23,8 +23,8 @@ public class StandardBotPlayer : BotPlayer {
         evaluator = Evaluator.GetDefault(settings);
 
         destinationNode = null;
-        searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
-        // searcher = new MonteCarloSearcher(1000);
+        // searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
+        searcher = new MonteCarloSearcher(1000);
         
         game.ChangeInputMode();
         UpdateMino();

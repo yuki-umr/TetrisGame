@@ -48,6 +48,9 @@ public abstract class StateNode : IComparable<StateNode> {
         return node;
     }
 
+    /// <summary>
+    /// Used on the leaf nodes to get the path from the root node to this node.
+    /// </summary>
     public List<StateNode> GetNodesFromRoot() {
         if (IsRoot) return new List<StateNode>();
         List<StateNode> nodes = Parent.GetNodesFromRoot();
