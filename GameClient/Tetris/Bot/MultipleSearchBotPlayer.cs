@@ -53,11 +53,6 @@ public class MultipleSearchBotPlayer : BotPlayer {
             
             StateNode searcherNextNode = destinationNode.GetSubRootNode();
             bestNode ??= searcherNextNode;
-            if (bestStates.TryAdd(searcherNextNode.GameState, searcherNextNode)) {
-                if (searcher is MonteCarloSearcher) {
-                    Console.WriteLine($"AAA: {destinationNode.GetNodesFromRoot().Count}"); // DOING: usage of GetNodesFromRoot() is wrong, it must be used for the "leaf node" only
-                } 
-            }
         }
 
         // Compare the first move and save if any searcher made a different move

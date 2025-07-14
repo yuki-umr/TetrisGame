@@ -112,7 +112,7 @@ public class MultipleSearchViewer : WindowManager {
             
             RandomGen.SetSeed(selectedState.searchSeed); // reset the search seed every time
             StateNode bestNode = searcher.Search(selectedState.state);
-            List<StateNode> nodes = bestNode.GetNodesFromRoot(); // DOING: why is this working when bestNode is the root node?
+            List<StateNode> nodes = bestNode.GetNodesFromRoot();
             nodeFields.Add(new List<(ColoredGameField, StateNode)>());
             
             // nodes.Count -> maximum depth
