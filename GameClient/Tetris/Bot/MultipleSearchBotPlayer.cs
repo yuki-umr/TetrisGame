@@ -22,7 +22,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
         searchers = new List<SearcherSet>();
         foreach (BotSettings setting in settings) {
-            Evaluator evaluator = Evaluator.GetDefault(setting);
+            IEvaluator evaluator = DefaultEvaluator.GetDefault(setting);
             ISearcher searcher = setting.GetSearcher();
             searchers.Add(new SearcherSet { searcher = searcher, evaluator = evaluator });
         }
@@ -45,7 +45,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
         bool saveThisState = false;
 
         int searchSeed = RandomGen.ResetSeed();
-        foreach ((ISearcher searcher, Evaluator evaluator) in searchers) {
+        foreach ((ISearcher searcher, IEvaluator evaluator) in searchers) {
             // some searchers like MCTS uses random while searching, we need to set a seed to get consistent results
             RandomGen.SetSeed(searchSeed);
             StateNode destinationNode = searcher.Search(game.State, null, evaluator, out _);
@@ -84,9 +84,9 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
     private class SearcherSet {
         public ISearcher searcher;
-        public Evaluator evaluator;
+        public IEvaluator evaluator;
         
-        public void Deconstruct(out ISearcher searcher, out Evaluator evaluator) {
+        public void Deconstruct(out ISearcher searcher, out IEvaluator evaluator) {
             searcher = this.searcher;
             evaluator = this.evaluator;
         }

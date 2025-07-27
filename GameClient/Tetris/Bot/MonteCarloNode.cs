@@ -24,7 +24,7 @@ public class MonteCarloNode : StateNode {
         totalEvaluationToLeaf = evaluation;
     }
 
-    public static MonteCarloNode CreateRootNode(GameState gameState, Evaluator evaluator) {
+    public static MonteCarloNode CreateRootNode(GameState gameState, IEvaluator evaluator) {
         int fieldEvaluation = evaluator.EvaluateField(gameState.Field, out List<PatternMatchData> patterns);
         Evaluation eval = new(fieldEvaluation, 0, default, gameState, patterns);
         MonteCarloNode rootNode = new(gameState, -1, default, eval, null, null, false, 0, 0);
@@ -37,7 +37,7 @@ public class MonteCarloNode : StateNode {
         ChildNodes.Add(node);
     }
 
-    public bool ExpandNode(Evaluator evaluator) {
+    public bool ExpandNode(IEvaluator evaluator) {
         if (Expanded) return ChildNodes.Count > 0;
         
         List<MinoPlacement> childPlacements = ListPossibleMinoPlacements(GameState.CurrentMino, false),

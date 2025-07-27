@@ -9,7 +9,7 @@ public class BeamNode : StateNode {
         : base(gameState, minoType, minoState, evaluation, parentNode, route, useHold) {
     }
 
-    public static BeamNode CreateRootNode(GameState gameState, Evaluator evaluator) {
+    public static BeamNode CreateRootNode(GameState gameState, IEvaluator evaluator) {
         int fieldEvaluation = evaluator.EvaluateField(gameState.Field, out List<PatternMatchData> patterns);
         Evaluation eval = new(fieldEvaluation, 0, default, gameState, patterns);
         return new BeamNode(gameState, -1, default, eval, null, null, false);
@@ -20,7 +20,7 @@ public class BeamNode : StateNode {
         ChildNodes.Add(node);
     }
 
-    public static PriorityQueue<StateNode, int> ExpandNodes(List<StateNode> nodes, Evaluator evaluator) {
+    public static PriorityQueue<StateNode, int> ExpandNodes(List<StateNode> nodes, IEvaluator evaluator) {
         PriorityQueue<StateNode, int> newNodes = new PriorityQueue<StateNode, int>(nodes.Count * 40);
         foreach (StateNode node in nodes) {
             if (node.Expanded) {

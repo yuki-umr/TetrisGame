@@ -17,7 +17,7 @@ public class BeamSearcher : ISearcher {
         stats = new SearchStat();
     }
     
-    public StateNode Search(GameState gameState, StateNode lastSelectedNode, Evaluator evaluator, out SearchProcess searchProcess) {
+    public StateNode Search(GameState gameState, StateNode lastSelectedNode, IEvaluator evaluator, out SearchProcess searchProcess) {
         int nodeCount = 0;
         Stopwatch sw = Stopwatch.StartNew();
         

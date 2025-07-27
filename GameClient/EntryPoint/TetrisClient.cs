@@ -19,7 +19,7 @@ public class TetrisClient : WindowManager {
     public override bool FixedTimeStep => true;
     public override int MinimumFrameTime => minimumFrameTime;
 
-    private int minimumFrameTime = 64, resetStep = -1;
+    private int minimumFrameTime = 16, resetStep = -1;
 
     protected override void OnInitialize() {
         foreach (string arg in Program.GetOptions().Args) {

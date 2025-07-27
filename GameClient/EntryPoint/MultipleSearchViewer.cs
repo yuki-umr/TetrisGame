@@ -238,13 +238,13 @@ public class MultipleSearchViewer : WindowManager {
 
     private class SearchPair {
         public readonly ISearcher searcher;
-        private readonly Evaluator evaluator;
+        private readonly IEvaluator evaluator;
         public readonly BotSettings settings;
 
         public SearchPair(string botFlags) {
             settings = BotSettings.Deserialize(botFlags);
             searcher = settings.GetSearcher();
-            evaluator = Evaluator.GetDefault(settings);
+            evaluator = settings.GetEvaluator();
         }
 
         public StateNode Search(GameState state) {

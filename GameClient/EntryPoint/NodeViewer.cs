@@ -22,7 +22,7 @@ public class NodeViewer : WindowManager {
     private List<ColoredGameField>[] fieldsTree;
     private KeyboardInput inputSystem;
     private Vector2Int drawOffset;
-    private Evaluator evaluator;
+    private DefaultEvaluator evaluator;
 
     private const int BeamWidth = 12;
 
@@ -50,7 +50,7 @@ public class NodeViewer : WindowManager {
     
     protected override void OnInitialize() {
         GameState gameState = CreateTestGameState();
-        evaluator = Evaluator.GetDefault(new BotSettings());
+        evaluator = DefaultEvaluator.GetDefault(new BotSettings());
         ISearcher searcher = new BeamSearcher(5, BeamWidth);
         
         searcher.Search(gameState, null, evaluator, out SearchProcess process);

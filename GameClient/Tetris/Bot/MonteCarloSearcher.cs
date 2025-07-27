@@ -15,7 +15,7 @@ public class MonteCarloSearcher : ISearcher {
         SearcherInfo = $"MCTS ({iterations} iterations)";
     }
     
-    public StateNode Search(GameState gameState, StateNode lastSelectedNode, Evaluator evaluator, out SearchProcess searchProcess) {
+    public StateNode Search(GameState gameState, StateNode lastSelectedNode, IEvaluator evaluator, out SearchProcess searchProcess) {
         MonteCarloNode rootNode;
         if (lastSelectedNode is MonteCarloNode lastMonteCarloNode && lastSelectedNode.GameState == gameState) {
             lastMonteCarloNode.ConvertToRootNode();
@@ -49,7 +49,7 @@ public class MonteCarloSearcher : ISearcher {
         return new SearchStats("", "", "");
     }
 
-    private void SingleIteration(MonteCarloNode rootNode, Evaluator evaluator) {
+    private void SingleIteration(MonteCarloNode rootNode, IEvaluator evaluator) {
         // 1. Traverse the tree to select a node to expand
         MonteCarloNode currentNode = rootNode;
         int expandDepth = 0;

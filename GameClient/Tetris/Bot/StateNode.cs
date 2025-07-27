@@ -72,7 +72,7 @@ public abstract class StateNode : IComparable<StateNode> {
         return Parent.GetEvaluationTotalInternal() + Evaluation.movement;
     }
 
-    public void ExpandChild(List<MinoPlacement> placements, Evaluator evaluator, bool useHold) {
+    public void ExpandChild(List<MinoPlacement> placements, IEvaluator evaluator, bool useHold) {
         ChildNodes ??= new List<StateNode>();
         foreach (MinoPlacement placement in placements) {
             GameState gameStateBeforeLock = GameState;

@@ -44,12 +44,17 @@ public class BotSettings {
     
     // switching between different search algorithms
     [JsonProperty("beam")] public SearchAlgorithm SearchType { get; set; } = SearchAlgorithm.Beam;
+    [JsonProperty("eval")] public EvaluatorType Evaluator { get; set; } = EvaluatorType.Default;
     [JsonProperty("bw")] public int BeamWidth { get; set; } = 12;
     [JsonProperty("bd")] public int BeamDepth { get; set; } = 5;
     [JsonProperty("mcit")] public int MCTSIterations { get; set; } = 1000;
     
     public enum SearchAlgorithm {
         Beam, MCTS
+    }
+    
+    public enum EvaluatorType {
+        Default, Thiery
     }
 
     private List<PropertyInfo> modifiedPropsCache;
@@ -76,6 +81,16 @@ public class BotSettings {
             return new MonteCarloSearcher(MCTSIterations);
         } else {
             throw new NotSupportedException($"Search algorithm {SearchType} is not supported.");
+        }
+    }
+
+    public IEvaluator GetEvaluator() {
+        if (Evaluator == EvaluatorType.Default) {
+            return DefaultEvaluator.GetDefault(this);
+        } else if (Evaluator == EvaluatorType.Thiery) {
+            return ThieryEvaluator.GetDefault(this);
+        } else {
+            throw new NotSupportedException($"Evaluator type {Evaluator} is not supported.");
         }
     }
 

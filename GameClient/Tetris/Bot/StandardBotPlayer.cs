@@ -10,7 +10,7 @@ public class StandardBotPlayer : BotPlayer {
 
     private readonly GameController game;
     private readonly MinoRouteInput inputSystem;
-    private readonly Evaluator evaluator;
+    private readonly IEvaluator evaluator;
     private readonly ISearcher searcher;
 
     private StateNode destinationNode, nextNode;
@@ -20,11 +20,13 @@ public class StandardBotPlayer : BotPlayer {
         this.inputSystem = inputSystem;
         
         settings ??= new BotSettings();
-        evaluator = Evaluator.GetDefault(settings);
+        // evaluator = DefaultEvaluator.GetDefault(settings);
+        evaluator = ThieryEvaluator.GetDefault(settings);
 
         destinationNode = null;
         // searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
-        searcher = new MonteCarloSearcher(1000);
+        searcher = new BeamSearcher(1, 1);
+        // searcher = new MonteCarloSearcher(1000);
         
         game.ChangeInputMode();
         UpdateMino();
@@ -58,7 +60,7 @@ public class StandardBotPlayer : BotPlayer {
         nodesInfo += $"\n\navg:{lastStats.searchSpeed}";
         Primitives.DrawText(spriteBatch, nodesInfo, 720, 64, 24, 0xffffffff);
         Primitives.DrawText(spriteBatch, game.Statistics.ToString(), 720, 240, 16, 0xffffffff);
-        Primitives.DrawText(spriteBatch, evaluator.ControlFlags, 720, 600, 10, 0xffffffff);
+        // Primitives.DrawText(spriteBatch, evaluator.ControlFlags, 720, 600, 10, 0xffffffff);
         
         if (destinationNode != null && DrawProcess) {
             foreach (StateNode node in destinationNode.GetNodesFromRoot()) {
