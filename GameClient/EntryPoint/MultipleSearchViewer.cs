@@ -23,7 +23,7 @@ public class MultipleSearchViewer : WindowManager {
     public override bool FixedTimeStep => true;
     public override int MinimumFrameTime => 4;
 
-    private string folderName = "250711";
+    private string folderName = "250728";
 
     private int nodeIndex, favoriteIndex, maxDepth;
     private bool favoriteOnlyMode;

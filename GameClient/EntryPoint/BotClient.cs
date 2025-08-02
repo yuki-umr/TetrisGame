@@ -50,6 +50,7 @@ public class BotClient : WindowManager {
 
     private void Setup() {
         gameController = new GameController(bagSeed: initialSeed + attempt);
+        
         input = new MinoRouteInput();
         botPlayer = new StandardBotPlayer(gameController, input, currentPlayOut.settings);
         attempt++;

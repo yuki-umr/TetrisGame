@@ -22,25 +22,26 @@ public class NodeViewer : WindowManager {
     private List<ColoredGameField>[] fieldsTree;
     private KeyboardInput inputSystem;
     private Vector2Int drawOffset;
-    private DefaultEvaluator evaluator;
+    private IEvaluator evaluator;
 
     private const int BeamWidth = 12;
 
     private GameState CreateTestGameState() {
         uint[] field = {
-            0b0000000u, 
-            0b0000000u, 
+            0b0000111u, 
+            0b0000111u, 
+            0b0000001u, 
             0b0000000u, 
             0b0000001u, 
-            0b0000011u, 
-            0b0000011u, 
-            0b0000011u, 
+            0b0000111u, 
+            0b0000111u, 
             0b0000011u, 
             0b0000011u, 
             0b0000011u
         };
-        int defaultMino = 5;
-        List<ulong> nextMinos = new List<ulong> { 0, 3, 2, 1, 4, 6 };
+        Array.Reverse(field);
+        int defaultMino = 3;
+        List<ulong> nextMinos = new List<ulong> { 0, 2, 5, 0, 4, 6 };
         
         BitMatrix initialField = new BitMatrix(field, Constants.DefaultGameFieldSize);
         MinoBag bag = new MinoBag(nextMinos);
@@ -50,7 +51,8 @@ public class NodeViewer : WindowManager {
     
     protected override void OnInitialize() {
         GameState gameState = CreateTestGameState();
-        evaluator = DefaultEvaluator.GetDefault(new BotSettings());
+        // evaluator = DefaultEvaluator.GetDefault(new BotSettings());
+        evaluator = ThieryEvaluator.GetDefault(new BotSettings());
         ISearcher searcher = new BeamSearcher(5, BeamWidth);
         
         searcher.Search(gameState, null, evaluator, out SearchProcess process);
@@ -98,11 +100,11 @@ public class NodeViewer : WindowManager {
                     Primitives.DrawLine(spriteBatch, dx + ItemWidth / 2, dy, 
                         ItemWidth * node.Parent.NodeRank + ItemWidth / 2 + drawOffset.x, dy - FieldSpaceY, 1, 0xff000080u);
 
-                bool tsd = !node.IsRoot && node.Parent.Evaluation.patternsFound != null && node.Parent.Evaluation.patternsFound.Any(p => p.state == node.MinoState);
+                // bool tsd = !node.IsRoot && node.Parent.Evaluation.patternsFound != null && node.Parent.Evaluation.patternsFound.Any(p => p.state == node.MinoState);
                 
-                string breakdown = $"{evaluator.KeyFieldHeight(node.GameState.Field)} {evaluator.KeyFieldCeiling(node.GameState.Field)}\n" +
-                                   $"{evaluator.KeyFieldSteepness(node.GameState.Field)} {evaluator.KeyFieldWalledWell(node.GameState.Field)} " +
-                                   $"{evaluator.KeyPatternMatches(node.Evaluation.patternsFound, node.GameState.Field)}";
+                // string breakdown = $"{evaluator.KeyFieldHeight(node.GameState.Field)} {evaluator.KeyFieldCeiling(node.GameState.Field)}\n" +
+                //                    $"{evaluator.KeyFieldSteepness(node.GameState.Field)} {evaluator.KeyFieldWalledWell(node.GameState.Field)} " +
+                //                    $"{evaluator.KeyPatternMatches(node.Evaluation.patternsFound, node.GameState.Field)}";
                 string eval = $"fld {node.Evaluation.field} {node.UseHold}\nmov {node.Evaluation.movement}\nrnk{node.Parent.NodeRank}";
                 Primitives.DrawText(spriteBatch, eval, dx, dy + BlockSize * (Constants.GameFieldHeight + 2), 12, Color.White);
             }

@@ -15,7 +15,8 @@ public class SearchCompareClient : WindowManager {
     // Test all patterns of settings on default, change this to run only for specific configurations
     private static readonly BotSettings[] TestSettings = {
         new() { SearchType = BotSettings.SearchAlgorithm.Beam, BeamWidth = 12, BeamDepth = 5 },
-        new() { SearchType = BotSettings.SearchAlgorithm.MCTS, MCTSIterations = 1000 },
+        new() { SearchType = BotSettings.SearchAlgorithm.Beam, BeamWidth = 12, BeamDepth = 5, Evaluator = BotSettings.EvaluatorType.Thiery },
+        new() { SearchType = BotSettings.SearchAlgorithm.Beam, BeamWidth = 1, BeamDepth = 1, Evaluator = BotSettings.EvaluatorType.Thiery },
     };
 
     private GameController gameController;

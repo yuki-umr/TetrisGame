@@ -22,7 +22,7 @@ public class MultipleSearchBotPlayer : BotPlayer {
 
         searchers = new List<SearcherSet>();
         foreach (BotSettings setting in settings) {
-            IEvaluator evaluator = DefaultEvaluator.GetDefault(setting);
+            IEvaluator evaluator = setting.GetEvaluator();
             ISearcher searcher = setting.GetSearcher();
             searchers.Add(new SearcherSet { searcher = searcher, evaluator = evaluator });
         }
