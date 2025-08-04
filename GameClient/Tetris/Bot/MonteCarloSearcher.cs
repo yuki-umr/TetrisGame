@@ -7,6 +7,7 @@ namespace GameClient.Tetris;
 public class MonteCarloSearcher : ISearcher {
     public string SearcherInfo { get; }
 
+    private readonly List<int> expandedDepths = new();
     private readonly Dictionary<int, int> expandedDepthCount = new();
     private readonly int fixedIterations;
 
@@ -26,19 +27,23 @@ public class MonteCarloSearcher : ISearcher {
 
         searchProcess = new MonteCarloSearchProcess();
         MonteCarloNode.CreatedChildNodesCount = 0;
+        expandedDepths.Clear();
         expandedDepthCount.Clear();
         for (int i = 0; i < fixedIterations; i++) {
             SingleIteration(rootNode, evaluator);
         }
 
         int depth = 0;
+        rootNode.LogNode();
+        
         MonteCarloNode resultNode = rootNode, nextNode = null;
         while ((nextNode = resultNode.GetBestChild()) != null) { // traverse the tree to find the end result
             resultNode = nextNode;
             depth++;
         }
 
-        Console.WriteLine($"AAA: bestNodeDepth={depth}, " +
+        Console.WriteLine($"AAA: exdepth({expandedDepths.Count})=[{string.Join(", ", expandedDepths)}]");
+        Console.WriteLine($"AAA: bestNodeDepth={depth}, maxDepth={rootNode.MaxDepth} " +
                           $"expandedDepth={string.Join(", ", expandedDepthCount.OrderBy(pair => pair.Key).Select(pair => $"{{{pair.Key}:{pair.Value}}}"))} " +
                           $"createdNodes={MonteCarloNode.CreatedChildNodesCount}");
         return resultNode;
@@ -59,11 +64,13 @@ public class MonteCarloSearcher : ISearcher {
         }
         
         if (currentNode == null) {
+            expandedDepths.Add(-1);
             // No valid node found, return early
             return;
         }
         
         // 2. Generate child nodes with all possible moves, and evaluate them 
+        // expandedDepths.Add(currentNode.NodeDepth);
         currentNode.ExpandNode(evaluator);
         if (expandedDepthCount.TryGetValue(expandDepth, out int count)) {
             expandedDepthCount[expandDepth] = count + 1;
@@ -76,13 +83,26 @@ public class MonteCarloSearcher : ISearcher {
     }
 
     private void Backpropagate(MonteCarloNode node) {
+        MonteCarloNode leafNode = node;
+        
         while (true) {
             // rebuild the selection weights used in the next iteration
             bool evaluationUpdated = node.UpdateNodeEvaluationFromChild();
 
-            if (!evaluationUpdated || node.Parent is null || node.Parent.IsRoot) return;
+            if (!evaluationUpdated || node.Parent is null || node.Parent.IsRoot) break;
             node.UpdateSelectionWeightInParent();
             node = (MonteCarloNode)node.Parent;
+        }
+
+        // update max depth
+        node = leafNode;
+        while (node != null) {
+            bool updatedParentDepth = node.UpdateParentMaxDepth();
+            if (updatedParentDepth) {
+                node = (MonteCarloNode)node.Parent;
+            } else {
+                break; // no need to continue if the parent depth was not updated
+            }
         }
     }
 }

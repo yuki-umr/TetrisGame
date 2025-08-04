@@ -196,10 +196,19 @@ public class DefaultEvaluator : IEvaluator {
 
     public static DefaultEvaluator GetDefault(BotSettings settings) {
         if (settings.Genes is null) {
-            return CreateLemonTea(settings);
+            return CreateModifiedLemonTea(settings);
         } else {
             return CreateFromGeneValues(settings.Genes.Select(g => -(int)g.Value));
         }
+    }
+
+    public static DefaultEvaluator CreateModifiedLemonTea(BotSettings settings) {
+        DefaultEvaluator evaluator = CreateLemonTea(settings);
+        // evaluator.field.height = 0;
+        // evaluator.field.height10 = -10;
+
+        evaluator.move.tSpin[0] = 100;
+        return evaluator;
     } 
 
     public static DefaultEvaluator CreateLemonTea(BotSettings settings) {

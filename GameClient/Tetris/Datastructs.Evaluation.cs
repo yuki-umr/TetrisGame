@@ -20,9 +20,11 @@ public readonly struct Evaluation : IComparable<Evaluation> {
     }
 
     public int CompareTo(Evaluation other) {
-        int fieldComparison = field.CompareTo(other.field);
-        if (fieldComparison != 0) return fieldComparison;
-        return movement.CompareTo(other.movement);
+        // why not just compare the value?
+        // int fieldComparison = field.CompareTo(other.field);
+        // if (fieldComparison != 0) return fieldComparison;
+        // return movement.CompareTo(other.movement);
+        return Value.CompareTo(other.Value);
     }
     
     
@@ -40,5 +42,9 @@ public readonly struct Evaluation : IComparable<Evaluation> {
 
     public static bool operator >=(Evaluation left, Evaluation right) {
         return left.CompareTo(right) >= 0;
+    }
+
+    public override string ToString() {
+        return Value.ToString();
     }
 }

@@ -20,13 +20,13 @@ public class StandardBotPlayer : BotPlayer {
         this.inputSystem = inputSystem;
         
         settings ??= new BotSettings();
-        // evaluator = DefaultEvaluator.GetDefault(settings);
-        evaluator = ThieryEvaluator.GetDefault(settings);
+        evaluator = DefaultEvaluator.GetDefault(settings);
+        // evaluator = ThieryEvaluator.GetDefault(settings);
 
         destinationNode = null;
         // searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
-        searcher = new BeamSearcher(1, 1);
-        // searcher = new MonteCarloSearcher(1000);
+        // searcher = new BeamSearcher(1, 1);
+        searcher = new MonteCarloSearcher(1000);
         
         game.ChangeInputMode();
         UpdateMino();
