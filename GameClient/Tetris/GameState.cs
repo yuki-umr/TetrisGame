@@ -135,7 +135,7 @@ public class GameState : IStateSerializable, IEquatable<GameState> {
     }
 
     public bool Equals(GameState other) {
-        return Equals(Field, other.Field) && Equals(minoBag, other.minoBag) && CurrentMino == other.CurrentMino
+        return Field == other.Field && minoBag == other.minoBag && CurrentMino == other.CurrentMino
                && HoldingMino == other.HoldingMino && RenCount == other.RenCount && BackToBack == other.BackToBack;
     }
 

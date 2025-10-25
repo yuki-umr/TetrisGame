@@ -5,7 +5,7 @@ using GameClient.Tetris.Pathfinding;
 namespace GameClient.Tetris; 
 
 public abstract class StateNode : IComparable<StateNode> {
-    public StateNode Parent { get; }
+    public StateNode Parent { get; private set; }
     public MinoState MinoState { get; }
     public int MinoType { get; }
     public GameState GameState { get; }
@@ -13,6 +13,7 @@ public abstract class StateNode : IComparable<StateNode> {
     public List<StateNode> ChildNodes { get; set; }
     public bool UseHold { get; }
     public int NodeRank { get; set; }
+    public int NodeDepth { get; set; }
 
     private MinoRoute route;
     private bool convertedToRoot;
@@ -33,8 +34,9 @@ public abstract class StateNode : IComparable<StateNode> {
         this.route = route;
     }
 
-    public void ConvertToRootNode() {
+    public virtual void ConvertToRootNode() {
         convertedToRoot = true;
+        Parent = null; // detach from parent to prevent memory leaks
     }
 
     public StateNode GetSubRootNode() {

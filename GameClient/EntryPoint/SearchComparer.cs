@@ -5,7 +5,7 @@ using System.Threading;
 namespace GameClient.EntryPoint;
 
 public class SearchComparer {
-    private const int MaxStep = 500, MaxAttempt = 4, InitialSeed = 0;
+    private const int MaxStep = 50, MaxAttempt = 1, InitialSeed = 0;
     private const int Threads = 4;
     
     public SearchComparer() {

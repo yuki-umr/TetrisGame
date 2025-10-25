@@ -16,8 +16,6 @@ public class MonteCarloNode : StateNode {
     
     public int MaxDepth { get; private set; }
     public int NodeDepth => nodeDepth;
-    
-    public static int CreatedChildNodesCount { get; set; }
 
     public MonteCarloNode(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, StateNode parentNode,
         MinoRoute route, bool useHold, int nodeIndex, int nodeDepth)
@@ -34,13 +32,17 @@ public class MonteCarloNode : StateNode {
         return rootNode;
     }
 
+    public override void ConvertToRootNode() {
+        base.ConvertToRootNode();
+    }
+
     protected override void CreateChild(GameState gameState, int minoType, MinoState minoState, Evaluation evaluation, MinoRoute route, bool useHold) {
         int newNodeIndex = ChildNodes.Count;
         MonteCarloNode node = new(gameState, minoType, minoState, evaluation, this, route, useHold, newNodeIndex, nodeDepth + 1);
         ChildNodes.Add(node);
     }
 
-    public bool ExpandNode(IEvaluator evaluator) {
+    public bool ExpandNode(IEvaluator evaluator, MonteCarloSearcher.SearchReport report) {
         if (Expanded) return ChildNodes.Count > 0;
         
         List<MinoPlacement> childPlacements = ListPossibleMinoPlacements(GameState.CurrentMino, false),
@@ -48,13 +50,13 @@ public class MonteCarloNode : StateNode {
 
         ExpandChild(childPlacements, evaluator, false);
         ExpandChild(holdChildPlacements, evaluator, true);
-        CreatedChildNodesCount += ChildNodes.Count;
+        report.createdNodes += ChildNodes.Count;
         
         // recalculate the selection weights
         evaluations.Clear();
         foreach (StateNode node in ChildNodes) {
             MonteCarloNode childNode = (MonteCarloNode)node;
-            float weight = childNode.CalculateSelectionWeight();
+            float weight = childNode.CalculateSelectionWeight(); // weight = evaluation of the node itself
             evaluations.Add(weight);
             
             if (childNode.Evaluation > ChildNodes[bestChildIndex].Evaluation) {
@@ -121,15 +123,15 @@ public class MonteCarloNode : StateNode {
         return false;
     }
     
-    public void LogNode() {
-        Console.WriteLine($"AAA: childCount={ChildNodes.Count}, best={bestChildIndex}" +
+    public void LogNode(int iterations) {
+        Console.WriteLine($"AAA-it{iterations}: childCount={ChildNodes.Count}, best={bestChildIndex}" +
                           $@", [{string.Join(", ", ChildNodes.Select((n, i) => {
                               MonteCarloNode node = (MonteCarloNode)n;
                               return $"({i}: {node.totalEvaluationToLeaf.Value}/{node.MaxDepth} {node.visitCount})";
                           }))}]");
         Span<float> selectionWeights = stackalloc float[evaluations.Count];
         CalculateChildSelectionWeights(ref selectionWeights, out float totalSelectionWeight);
-        Console.WriteLine($"AAA: totalWeight={totalSelectionWeight}, [{string.Join(", ", selectionWeights.ToArray().Select((f, i) => $"({i}: {f})"))}]");
+        Console.WriteLine($"AAA-it{iterations}: totalWeight={totalSelectionWeight}, [{string.Join(", ", selectionWeights.ToArray().Select((f, i) => $"({i}: {f})"))}]");
     }
 
     public MonteCarloNode GetBestChild() {

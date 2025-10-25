@@ -76,7 +76,7 @@ public class BotSettings {
     
     public ISearcher GetSearcher() {
         if (SearchType == SearchAlgorithm.Beam) {
-            return new BeamSearcher(BeamWidth, BeamDepth);
+            return new BeamSearcher(BeamDepth, BeamWidth);
         } else if (SearchType == SearchAlgorithm.MCTS) {
             return new MonteCarloSearcher(MCTSIterations);
         } else {

@@ -4,7 +4,7 @@ using System.IO;
 
 namespace GameClient.Tetris; 
 
-public struct MinoBag : IStateSerializable {
+public struct MinoBag : IStateSerializable, IEquatable<MinoBag> {
     // Splits ulong(64bits) into 21 segments of 3-bit containers, each containing 0 for none, 1~7 for their corresponding minos
     private ulong bag;
     private int nextSeed;

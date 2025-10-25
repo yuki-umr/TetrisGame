@@ -4,12 +4,20 @@ using System.Collections.Generic;
 namespace GameClient.Tetris;
 
 public readonly struct Evaluation : IComparable<Evaluation> {
+    private static readonly List<PatternMatchData> SharedEmptyList = new();
+    
     public readonly int field, movement;
     public readonly MovementResult result;
     public readonly GameState gameStateAfterMove;
     public readonly List<PatternMatchData> patternsFound;
 
     public int Value => field + movement;
+
+    public Evaluation(int field, int movement) {
+        this.field = field;
+        this.movement = movement;
+        (result, gameStateAfterMove, patternsFound) = (default, null, SharedEmptyList);
+    }
 
     public Evaluation(int field, int movement, MovementResult result, GameState gameStateAfterMove, List<PatternMatchData> patternsFound) {
         this.field = field;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace GameClient.EntryPoint;
 
 public class BotClient : WindowManager {
     private const string LogFolderName = "log";
+    
+    private static readonly ConcurrentDictionary<int, ProgressInfo> ProgressInfos = new();
     
     // Tests all patterns of settings in this array
     private string[] allSettings = Array.Empty<string>();
@@ -26,6 +29,12 @@ public class BotClient : WindowManager {
 
     private PlayOutResult currentPlayOut;
     private int resetStep = -1, maxAttempt, initialSeed, attempt, settingsIndex;
+    private ProgressInfo processProgressInfo;
+
+    public class ProgressInfo {
+        public int pid, maxAttempt, attempt, settingsIndex, totalSettings;
+        public int currentStep;
+    }
 
     protected override void OnInitialize() {
         foreach (string arg in Program.GetOptions().Args) {
@@ -34,6 +43,15 @@ public class BotClient : WindowManager {
             if (arg.StartsWith("initialSeed=")) initialSeed = int.Parse(arg[12..]);
             if (arg.StartsWith("testFlags=")) allSettings = arg[10..].Split(',');
         }
+        
+        processProgressInfo = new ProgressInfo {
+            pid = Program.GetOptions().Pid,
+            maxAttempt = maxAttempt,
+            attempt = 0,
+            settingsIndex = 0,
+            totalSettings = allSettings.Length
+        };
+        ProgressInfos[processProgressInfo.pid] = processProgressInfo;
         
         StartNewSet();
         Setup();
@@ -60,6 +78,7 @@ public class BotClient : WindowManager {
         botPlayer.Update();
         gameController.ProcessInput(input);
         gameController.Update();
+        processProgressInfo.currentStep = gameController.Statistics.steps;
         
         if (gameController.IsDead) Setup();
         if (resetStep >= 0 && gameController.Statistics.steps >= resetStep) {
@@ -93,6 +112,11 @@ public class BotClient : WindowManager {
         writer.Write(json);
         string filePath = (Directory.GetCurrentDirectory() + $"\\{LogFolderName}\\" + fileName).Replace('\\', '/');
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Saved log of {maxAttempt} attempts to file:///{filePath}");
+    }
+    
+    public static bool GetThreadProgressInfo(out ProgressInfo info) {
+        int pid = Program.GetOptions().Pid;
+        return ProgressInfos.TryGetValue(pid, out info);
     }
 }
 

@@ -14,6 +14,13 @@ public class MultipleSearchBotPlayer : BotPlayer {
     private readonly MinoRouteInput inputSystem;
     private readonly List<SearcherSet> searchers;
 
+    private readonly SearchCompareMethod compareMethod;
+
+    private enum SearchCompareMethod {
+        SelectedDifferentMove,
+        HasBetterEvaluation,
+    }
+
     private StateNode nextNode;
 
     public MultipleSearchBotPlayer(GameController game, MinoRouteInput inputSystem, IEnumerable<BotSettings> settings) {
@@ -39,8 +46,18 @@ public class MultipleSearchBotPlayer : BotPlayer {
         inputSystem.Update();
     }
 
+    private struct NodeSearchResult {
+        public StateNode destinationNode, nextNode;
+
+        public NodeSearchResult(StateNode destinationNode, StateNode nextNode) {
+            this.destinationNode = destinationNode;
+            this.nextNode = nextNode;
+        }
+    }
+
     private void UpdateMino() {
-        StateNode bestNode = null;
+        List<NodeSearchResult> searchResults = new();
+        int minSearchDepth = int.MaxValue;
         Dictionary<GameState, StateNode> bestStates = new();
         bool saveThisState = false;
 
@@ -52,14 +69,45 @@ public class MultipleSearchBotPlayer : BotPlayer {
             if (destinationNode == null) continue;
             
             StateNode searcherNextNode = destinationNode.GetSubRootNode();
-            bestNode ??= searcherNextNode;
+            NodeSearchResult searchState = new(destinationNode, searcherNextNode);
+
+            // some search algorithms like MCTS can have destinations with different depths
+            int destinationDepth = destinationNode.NodeDepth - searcherNextNode.NodeDepth;
+            minSearchDepth = Math.Min(minSearchDepth, destinationDepth);
+            
+            searchResults.Add(searchState);
         }
 
         // Compare the first move and save if any searcher made a different move
-        saveThisState = bestStates.Count > 1;
+        if (compareMethod == SearchCompareMethod.SelectedDifferentMove) {
+            saveThisState = bestStates.Count > 1;
+        } else if (compareMethod == SearchCompareMethod.HasBetterEvaluation) {
+            Evaluation baseEvaluation = default;
+            for (int i = 0; i < searchResults.Count; i++) {
+                NodeSearchResult result = searchResults[i];
+                int desiredDepth = result.nextNode.NodeDepth + minSearchDepth;
+                StateNode nodeAtMinDepth = result.destinationNode;
+                while (nodeAtMinDepth.NodeDepth > desiredDepth) {
+                    nodeAtMinDepth = nodeAtMinDepth.Parent;
+                }
+
+                Evaluation totalEvaluation = default;
+                bool totalEvaluationSet = false;
+                while (!nodeAtMinDepth.IsRoot) {
+                    if (!totalEvaluationSet) {
+                        totalEvaluationSet = true;
+                        totalEvaluation = nodeAtMinDepth.Evaluation;
+                    } else {
+                        totalEvaluation = new Evaluation(totalEvaluation.field, totalEvaluation.movement + nodeAtMinDepth.Evaluation.movement);
+                    }
+                    nodeAtMinDepth = nodeAtMinDepth.Parent;
+                }
+            }
+        }
         
-        if (bestNode != null) {
-            nextNode = bestNode;
+        
+        if (searchResults.Count > 0 && searchResults[0].nextNode != null) {
+            nextNode = searchResults[0].nextNode;
             inputSystem.SetCurrentRoute(nextNode.GetRoute());
 
             if (saveThisState) {

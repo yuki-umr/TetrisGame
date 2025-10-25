@@ -18,15 +18,21 @@ public class StandardBotPlayer : BotPlayer {
     public StandardBotPlayer(GameController game, MinoRouteInput inputSystem, BotSettings settings = null) {
         this.game = game;
         this.inputSystem = inputSystem;
-        
-        settings ??= new BotSettings();
+
+        settings ??= new BotSettings {
+            SearchType = BotSettings.SearchAlgorithm.Beam,
+            MCTSIterations = 10000,
+            BeamWidth = 1
+        };
         evaluator = DefaultEvaluator.GetDefault(settings);
         // evaluator = ThieryEvaluator.GetDefault(settings);
 
         destinationNode = null;
+        searcher = settings.GetSearcher();
         // searcher = new BeamSearcher(settings.BeamDepth, settings.BeamWidth);
         // searcher = new BeamSearcher(1, 1);
-        searcher = new MonteCarloSearcher(1000);
+        // searcher = new MonteCarloSearcher(1000);
+        // DOING there could be a memory leak somewhere in the mcts logic
         
         game.ChangeInputMode();
         UpdateMino();
@@ -40,6 +46,7 @@ public class StandardBotPlayer : BotPlayer {
         inputSystem.Update();
     }
 
+    // DOING configure search comparer to save instances where MCTS performed better 
     private void UpdateMino() {
         destinationNode = searcher.Search(game.State, nextNode, evaluator, out _);
         if (destinationNode != null) {

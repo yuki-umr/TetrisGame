@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using GameClient.EntryPoint;
 
 namespace GameClient.Tetris;
 
@@ -9,13 +11,13 @@ public class MonteCarloSearcher : ISearcher {
 
     private readonly List<int> expandedDepths = new();
     private readonly Dictionary<int, int> expandedDepthCount = new();
-    private readonly int fixedIterations;
+    public readonly int fixedIterations;
 
     public MonteCarloSearcher(int iterations) {
         fixedIterations = iterations;
         SearcherInfo = $"MCTS ({iterations} iterations)";
     }
-    
+
     public StateNode Search(GameState gameState, StateNode lastSelectedNode, IEvaluator evaluator, out SearchProcess searchProcess) {
         MonteCarloNode rootNode;
         if (lastSelectedNode is MonteCarloNode lastMonteCarloNode && lastSelectedNode.GameState == gameState) {
@@ -25,27 +27,35 @@ public class MonteCarloSearcher : ISearcher {
             rootNode = MonteCarloNode.CreateRootNode(gameState, evaluator);
         }
 
+        Stopwatch sw = Stopwatch.StartNew();
         searchProcess = new MonteCarloSearchProcess();
-        MonteCarloNode.CreatedChildNodesCount = 0;
+        SearchReport report = new();
         expandedDepths.Clear();
         expandedDepthCount.Clear();
         for (int i = 0; i < fixedIterations; i++) {
-            SingleIteration(rootNode, evaluator);
+            SingleIteration(rootNode, evaluator, report);
         }
 
         int depth = 0;
-        rootNode.LogNode();
-        
+        rootNode.LogNode(fixedIterations);
+
         MonteCarloNode resultNode = rootNode, nextNode = null;
         while ((nextNode = resultNode.GetBestChild()) != null) { // traverse the tree to find the end result
             resultNode = nextNode;
             depth++;
         }
 
-        Console.WriteLine($"AAA: exdepth({expandedDepths.Count})=[{string.Join(", ", expandedDepths)}]");
-        Console.WriteLine($"AAA: bestNodeDepth={depth}, maxDepth={rootNode.MaxDepth} " +
+        if (BotClient.GetThreadProgressInfo(out var progressInfo)) {
+            Console.WriteLine($"AAA-it{fixedIterations}: mcts iter at step={progressInfo.currentStep}, " +
+                              $"att={progressInfo.attempt}/{progressInfo.maxAttempt} completed, " +
+                              $"time={sw.Elapsed.TotalMilliseconds:F2}ms");
+        }
+
+        Console.WriteLine($"AAA-it{fixedIterations}: exdepth({expandedDepths.Count})=[{string.Join(", ", expandedDepths)}]");
+        Console.WriteLine($"AAA-it{fixedIterations}: () bestNodeDepth={depth}, maxDepth={rootNode.MaxDepth} " +
                           $"expandedDepth={string.Join(", ", expandedDepthCount.OrderBy(pair => pair.Key).Select(pair => $"{{{pair.Key}:{pair.Value}}}"))} " +
-                          $"createdNodes={MonteCarloNode.CreatedChildNodesCount}");
+                          $"createdNodes={report.createdNodes}");
+        // Console.WriteLine($"AAA: finished {fixedIterations}iter, {sw.Elapsed.TotalMilliseconds:F2}ms");
         return resultNode;
     }
 
@@ -54,7 +64,7 @@ public class MonteCarloSearcher : ISearcher {
         return new SearchStats("", "", "");
     }
 
-    private void SingleIteration(MonteCarloNode rootNode, IEvaluator evaluator) {
+    private void SingleIteration(MonteCarloNode rootNode, IEvaluator evaluator, SearchReport report) {
         // 1. Traverse the tree to select a node to expand
         MonteCarloNode currentNode = rootNode;
         int expandDepth = 0;
@@ -71,7 +81,7 @@ public class MonteCarloSearcher : ISearcher {
         
         // 2. Generate child nodes with all possible moves, and evaluate them 
         // expandedDepths.Add(currentNode.NodeDepth);
-        currentNode.ExpandNode(evaluator);
+        currentNode.ExpandNode(evaluator, report);
         if (expandedDepthCount.TryGetValue(expandDepth, out int count)) {
             expandedDepthCount[expandDepth] = count + 1;
         } else {
@@ -104,5 +114,9 @@ public class MonteCarloSearcher : ISearcher {
                 break; // no need to continue if the parent depth was not updated
             }
         }
+    }
+
+    public class SearchReport {
+        public int createdNodes;
     }
 }

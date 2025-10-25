@@ -34,6 +34,7 @@ public static class Program {
     private static readonly ConcurrentDictionary<int, OptionArgs> ThreadOptions = new();
     
     public static void Main(string[] args) {
+        Console.WriteLine($"[{string.Join(", ", Environment.GetCommandLineArgs())}]");
         ParserResult<OptionArgs> parseResult = Parser.Default.ParseArguments<OptionArgs>(args);
         if (parseResult.Errors.Any()) return;
         ThreadOptions[ThreadId] = parseResult.Value;
@@ -47,7 +48,7 @@ public static class Program {
     public static OptionArgs GetOptions() => ThreadOptions[ThreadId];
 
     public class OptionArgs {
-        [Option("mainClass", Required = true)]
+        [Option("mainClass", Required = false)]
         public string MainClass { get; set; }
         
         [Option("subClass", Required = false)]
